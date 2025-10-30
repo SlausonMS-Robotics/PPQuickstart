@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.teleops;
 
-import static org.firstinspires.ftc.teamcode.robot.servos.WRIST_FULL_EXTENSION_POS;
-import static org.firstinspires.ftc.teamcode.robot.servos.WRIST_FULL_RETRACTION_POS;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
@@ -72,7 +70,7 @@ public class ExampleFieldCentricTeleop extends OpMode {
     @Override
     public void start() {
         follower.startTeleopDrive(false);
-        robotservo.openGripper();
+
     }
 
     /** This is the main loop of the opmode and runs continuously after play **/
@@ -126,7 +124,7 @@ public class ExampleFieldCentricTeleop extends OpMode {
 
                     break;
                 case 1:
-                    robotservo.slideFullExtend();
+
                     break;
 
             }
@@ -135,12 +133,10 @@ public class ExampleFieldCentricTeleop extends OpMode {
 
         if(gamepad1.y && myTimer.getElapsedTime() > 300){
             if (gripOpen) {
-                robotservo.closeGripper();
                 gripOpen = false;
                 myTimer.resetTimer();
             }
             else {
-                robotservo.openGripper();
                 gripOpen = true;
                 myTimer.resetTimer();
             }
@@ -187,10 +183,6 @@ public class ExampleFieldCentricTeleop extends OpMode {
 
     }
 
-    /** We do not use this because everything automatically should disable **/
-    @Override
-    public void stop() {
-        robotservo.slideServoOff();
-    }
+
 
 }
