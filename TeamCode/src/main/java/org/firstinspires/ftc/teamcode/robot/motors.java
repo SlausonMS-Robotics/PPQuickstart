@@ -14,8 +14,8 @@ public class motors {
      * Add other motors here as needed.
      */
     public void init(HardwareMap hardwareMap) {
-        shooterMotor1 = hardwareMap.get(DcMotorEx.class, "ehmotor1");
-        shooterMotor0 = hardwareMap.get(DcMotorEx.class, "ehmotor0");
+        shooterMotor1 = hardwareMap.get(DcMotorEx.class, "motor1");
+        shooterMotor0 = hardwareMap.get(DcMotorEx.class, "motor0");
         shooterMotor0.setDirection(DcMotorSimple.Direction.REVERSE);
 
         shooterMotor0.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);

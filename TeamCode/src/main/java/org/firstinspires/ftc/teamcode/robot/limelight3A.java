@@ -19,9 +19,11 @@ public class limelight3A {
     private Telemetry telemetry;
 
     // Hardware
-    private Limelight3A limelight;
+    public Limelight3A limelight;
     // Results
     public LLResult result;
+
+
 
     /**
      * Initializes the Limelight and headlight hardware.
@@ -33,6 +35,7 @@ public class limelight3A {
 
             limelight.setPollRateHz(100);
             limelight.pipelineSwitch(pipeline);
+            limelight.start();
 
 
             return true;
