@@ -8,6 +8,7 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.robot.motors;
@@ -21,6 +22,10 @@ import org.firstinspires.ftc.teamcode.robot.servos;
 
 @TeleOp(name = "Example Field-Centric Teleop", group = "Examples")
 public class ExampleFieldCentricTeleop extends OpMode {
+    // You'll need to tune these values for your robot.
+    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(50, 0, 10, 14);
+    public static final double MAX_VELOCITY = 2800; // Ticks per second ->  28 ticks / rev * 6000 rpm / 60s = 2800 ticks /s
+
     private Follower follower;
     private static double scalar = 1.0;
     private double xval = 0;
@@ -50,6 +55,7 @@ public class ExampleFieldCentricTeleop extends OpMode {
         follower.setStartingPose(startPose);
         robotservo.init(hardwareMap);
         shooter.init(hardwareMap);
+        shooter.setShooterPIDFCoefficients(MOTOR_VELO_PID);
         //limelight.init(hardwareMap,5, follower, telemetry);
         myTimer = new Timer();
         llTimer = new Timer();
@@ -82,8 +88,6 @@ public class ExampleFieldCentricTeleop extends OpMode {
 
         follower.update();
 
-        shooter.shooterPower(1);
-
         if(gamepad1.left_trigger > .1) {
             scalar = .5;
             follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar,1), Math.pow(-gamepad1.left_stick_x * scalar,1), Math.pow(-gamepad1.right_stick_x * scalar,1), false);
@@ -94,10 +98,10 @@ public class ExampleFieldCentricTeleop extends OpMode {
         }
 
         if(gamepad1.right_trigger > .1) {
-            shooter.shooterPower(gamepad1.right_trigger);
+            shooter.setShooterVelocity(gamepad1.right_trigger * MAX_VELOCITY);
         }
         else {
-            shooter.shooterPower(0);
+            shooter.setShooterVelocity(0);
         }
 
         follower.update();
@@ -119,22 +123,10 @@ public class ExampleFieldCentricTeleop extends OpMode {
         if (runState){
             switch (state) {
                 case 0:
-                    robotservo.slideFullRetract();
-                    robotservo.setWristServo(WRIST_FULL_RETRACTION_POS);
 
                     break;
                 case 1:
                     robotservo.slideFullExtend();
-                    break;
-                case 2:
-                    robotservo.setWristServo(.5);
-                    break;
-                case 3:
-                    robotservo.setWristServo(WRIST_FULL_EXTENSION_POS);
-                    break;
-                case 4:
-                    robotservo.closeGripper();
-                    state = 3;
                     break;
 
             }
