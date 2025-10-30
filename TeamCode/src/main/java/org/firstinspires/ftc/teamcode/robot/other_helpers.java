@@ -1,0 +1,104 @@
+package org.firstinspires.ftc.teamcode.robot;
+
+import com.qualcomm.robotcore.util.ElapsedTime;
+import java.util.ArrayList;
+
+public class other_helpers {
+
+    // ---- PID Controller variables ----
+    private double p, i, d;
+    private double integralSum = 0;
+    private double lastError = 0;
+    private ElapsedTime timer = new ElapsedTime();
+
+    // ---- Moving Average variables ----
+    private ArrayList<Double> readings = new ArrayList<>();
+    private int movingAverageSize = 5; // Default size
+
+    /**
+     * Initializes the PID controller with the given coefficients.
+     * @param p Proportional gain
+     * @param i Integral gain
+     * @param d Derivative gain
+     */
+    public void initPID(double p, double i, double d) {
+        this.p = p;
+        this.i = i;
+        this.d = d;
+        resetPID();
+    }
+
+    /**
+     * Calculates the PID output based on the current and target states.
+     * @param currentState The current measurement
+     * @param targetState The desired measurement
+     * @return The calculated PID correction
+     */
+    public double updatePID(double currentState, double targetState) {
+        double error = targetState - currentState;
+        integralSum += error * timer.seconds();
+
+        // Handle the case where timer.seconds() is 0 on the first loop
+        if (timer.seconds() == 0) {
+            timer.reset();
+            // cannot calculate derivative on first loop
+            return (p * error) + (i * integralSum);
+        }
+
+        double derivative = (error - lastError) / timer.seconds();
+        lastError = error;
+
+        timer.reset();
+
+        return (p * error) + (i * integralSum) + (d * derivative);
+    }
+
+    /**
+     * Resets the PID controller's internal state.
+     */
+    public void resetPID() {
+        integralSum = 0;
+        lastError = 0;
+        timer.reset();
+    }
+
+    // ---- Moving Average Methods ----
+
+    /**
+     * Initializes the moving average with a specific size.
+     * @param size The number of readings to average.
+     */
+    public void initMovingAverage(int size) {
+        this.movingAverageSize = size;
+        this.readings.clear();
+    }
+
+    /**
+     * Adds a new reading and returns the new average.
+     * @param reading The new measurement to add.
+     * @return The new average of the readings.
+     */
+    public double updateAndGetAverage(double reading) {
+        readings.add(reading);
+        if (readings.size() > movingAverageSize) {
+            readings.remove(0);
+        }
+
+        if (readings.isEmpty()) {
+            return 0.0;
+        }
+        
+        double sum = 0;
+        for (Double r : readings) {
+            sum += r;
+        }
+        return sum / readings.size();
+    }
+
+    /**
+     * Clears all readings from the moving average.
+     */
+    public void clearReadings() {
+        readings.clear();
+    }
+}

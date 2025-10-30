@@ -1,17 +1,16 @@
 package org.firstinspires.ftc.teamcode.teleops;
 
-import static org.firstinspires.ftc.teamcode.robot.servos.WRIST_FULL_EXTENSION_POS;
-import static org.firstinspires.ftc.teamcode.robot.servos.WRIST_FULL_RETRACTION_POS;
-
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.robot.limelight3A;
 import org.firstinspires.ftc.teamcode.robot.motors;
+import org.firstinspires.ftc.teamcode.robot.other_helpers;
 import org.firstinspires.ftc.teamcode.robot.servos;
 
 /**
@@ -20,43 +19,50 @@ import org.firstinspires.ftc.teamcode.robot.servos;
  * @author Baron Henderson - 20077 The Indubitables
  * @version 2.0, 12/30/2024
  */
+//wifi direct password = 4EaUU37n
 
-@TeleOp(name = "Megatags Field-Centric Teleop", group = "Examples")
+@TeleOp(name = "Field-Centric Auto Aim Teleop", group = "Examples")
 public class FieldCentricTeleopLLMegaTags extends OpMode {
-    private Follower follower;
+    // With a 5-turn servo, the P gain needs to be much smaller. Start here for tuning.
+    public static double SERVO_P = 0.002, SERVO_I = 0.0, SERVO_D = 0.0;
+    private static final int MOVING_AVERAGE_SIZE = 5;
     private static double scalar = 1.0;
-    private double xval = 0;
-    private double yval = 0;
-    private double hval = 0;
-    private Timer myTimer, llTimer;
-    servos robotservo = new servos();
-    servos wristServo = new servos();
-    servos grabServo = new servos();
+    private static int ticks_per_rev = 28;
 
+    private double ll_goal_dist = 0;
+    private double ll_goal_heading = 0;
+    private Timer myTimer, llTimer;
+    servos turretServo = new servos();
     motors shooter = new motors();
     limelight3A limelight = new limelight3A();
 
-    private int state = 0;
-    private boolean gripOpen = false;
+    // PID and Moving Average Helpers
+    private other_helpers headingPid = new other_helpers();
+    private other_helpers headingAverage = new other_helpers();
+    private other_helpers distanceAverage = new other_helpers();
 
-    private boolean runState = false;
-    private boolean precise = false;
-
+    Follower follower;
+    private double turretPosition = 0;
+    private boolean use_PP = false;
     private final Pose startPose = new Pose(0,0,0);
 
     /** This method is call once when init is played, it initializes the follower **/
     @Override
     public void init() {
-
-        follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(startPose);
-        robotservo.init(hardwareMap);
+        if (use_PP) {
+            follower = Constants.createFollower(hardwareMap);
+            follower.setStartingPose(startPose);
+        }
+        turretServo.init(hardwareMap);
         shooter.init(hardwareMap);
-        limelight.init(hardwareMap,0, follower, telemetry);
+        limelight.init(hardwareMap,5, telemetry);
+
+        headingPid.initPID(SERVO_P, SERVO_I, SERVO_D);
+        headingAverage.initMovingAverage(MOVING_AVERAGE_SIZE);
+        distanceAverage.initMovingAverage(MOVING_AVERAGE_SIZE);
+
         myTimer = new Timer();
         llTimer = new Timer();
-        //robotservo.headlightOn();
-
     }
 
     /** This method is called continuously after Init while waiting to be started. **/
@@ -67,136 +73,58 @@ public class FieldCentricTeleopLLMegaTags extends OpMode {
     /** This method is called once at the start of the OpMode. **/
     @Override
     public void start() {
-        follower.startTeleopDrive(false);
-        robotservo.openGripper();
-        limelight.startLL(1);
+        if(use_PP) {
+            follower.startTeleopDrive(false);
+        }
     }
 
     /** This is the main loop of the opmode and runs continuously after play **/
     @Override
     public void loop() {
-
-        /* Update Pedro to move the robot based on:
-        - Forward/Backward Movement: -gamepad1.left_stick_y
-        - Left/Right Movement: -gamepad1.left_stick_x
-        - Turn Left/Right Movement: -gamepad1.right_stick_x
-        - Robot-Centric Mode: false
-        */
-
-        follower.update();
-
-
-
-        if(gamepad1.left_trigger > .1) {
-            scalar = .5;
-            follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar,1), Math.pow(-gamepad1.left_stick_x * scalar,1), Math.pow(-gamepad1.right_stick_x * scalar,1), false);
-        }
-        else {
-            scalar = 1.0;
-            follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar,3), Math.pow(-gamepad1.left_stick_x * scalar,3), Math.pow(-gamepad1.right_stick_x * scalar,3), false);
-        }
-
-        if(gamepad1.right_bumper) {
-            shooter.shooterPower(1.0);
-        }
-        else {
-            shooter.shooterPower(0);
-        }
-
-        follower.update();
-
-        if(gamepad1.b && myTimer.getElapsedTime() > 300) {
-            runState = true;
-            myTimer.resetTimer();
-            state++;
-        }
-        if(gamepad1.x && myTimer.getElapsedTime() > 300) {
-            runState = true;
-            myTimer.resetTimer();
-            state--;
-            if (state < 0){
-                state = 0;
+        if(use_PP) {
+            if (gamepad1.left_trigger > .1) {
+                scalar = .5;
+                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 1), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar, 1), false);
+            } else {
+                scalar = 1.0;
+                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 3), Math.pow(-gamepad1.left_stick_x * scalar, 3), Math.pow(-gamepad1.right_stick_x * scalar, 3), false);
             }
-        }
-
-        if (runState){
-            switch (state) {
-                case 0:
-                    robotservo.slideFullRetract();
-                    robotservo.setWristServo(WRIST_FULL_RETRACTION_POS);
-
-                    break;
-                case 1:
-                    robotservo.slideFullExtend();
-                    break;
-                case 2:
-                    robotservo.setWristServo(.5);
-                    break;
-                case 3:
-                    robotservo.setWristServo(WRIST_FULL_EXTENSION_POS);
-                    break;
-                case 4:
-                    robotservo.closeGripper();
-                    state = 3;
-                    break;
-
-            }
-            runState = false;
-        }
-
-        if(gamepad1.y && myTimer.getElapsedTime() > 300){
-            if (gripOpen) {
-                robotservo.closeGripper();
-                gripOpen = false;
-                myTimer.resetTimer();
-            }
-            else {
-                robotservo.openGripper();
-                gripOpen = true;
-                myTimer.resetTimer();
-            }
+            follower.update();
         }
 
         if(limelight.pollLimelight()) {
-                       //telemetry.addData("dist", dist);
-            telemetry.addData("dist", limelight.getLLAvgDist());
-            telemetry.addData("heading", limelight.result.getTx());
+            ll_goal_heading = headingAverage.updateAndGetAverage(limelight.result.getTx());
+            ll_goal_dist = distanceAverage.updateAndGetAverage(limelight.result.getBotposeAvgDist());
+
+            telemetry.addData("dist", ll_goal_dist);
+            telemetry.addData("heading", ll_goal_heading);
         }
+        else {
+            // Clear readings if we don't see a target
+            ll_goal_dist = 0;
+            ll_goal_heading = 0;
+            headingAverage.clearReadings();
+            distanceAverage.clearReadings();
+        }
+
+        double shooter_velocity_scalar = 5600.0 / 60.0 / 3.79; //(Revs / second) / Meter
+        // Set shooter velocity based on distance, not heading
+        if (ll_goal_dist > 0.1 && ll_goal_dist < 4){
+            shooter.setShooterVelocity(shooter_velocity_scalar * ticks_per_rev * ll_goal_dist);
+        }
+
+        if(Math.abs(ll_goal_heading) > 0.1){ // Only adjust if we are off-target
+            double pidOutput = headingPid.updatePID(ll_goal_heading, 0); // Pass current heading and target (0)
+            turretPosition -= pidOutput;
+            
+            turretServo.setTurretServoPos(turretPosition);
+        }
+
         telemetry.update();
-
-/*
-        if (gamepad1.right_trigger > .1) {
-            if (!limelight.getLLStatus()) limelight.startLL(100);
-            boolean llGood = limelight.pollLimelight();
-            if (llGood) {
-                double targetDist = limelight.getXDist(0);
-                if (targetDist > 0) robotservo.setSlideInches(targetDist);
-            }
-        }
-
- */
-
-
-
-
-
-        /* Telemetry Outputs of our Follower
-        telemetry.addData("X", follower.getPose().getX());
-        telemetry.addData("Y", follower.getPose().getY());
-        telemetry.addData("Xdist",limelight.getXDist(0));
-        //telemetry.addData("SPos", slide_pos);
-        telemetry.addData("Xdeg",limelight.getXDeg(0));
-        telemetry.addData("Ydeg",limelight.getYDeg(0));
-        telemetry.addData("area",limelight.getArea(0));
-        /* Update Telemetry to the Driver Hub */
-        //telemetry.update();
-
     }
 
     /** We do not use this because everything automatically should disable **/
     @Override
     public void stop() {
-        robotservo.slideServoOff();
     }
-
 }
