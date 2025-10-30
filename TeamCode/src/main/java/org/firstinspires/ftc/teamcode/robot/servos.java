@@ -21,8 +21,8 @@ public class servos {
      */
     public void init(HardwareMap hardwareMap) {
         
-        turretServo = hardwareMap.get(ServoImplEx.class, "servohub0");
-        indexerServo = hardwareMap.get(ServoImplEx.class, "servohub1");
+        turretServo = hardwareMap.get(ServoImplEx.class, "servo0");
+        indexerServo = hardwareMap.get(ServoImplEx.class, "servo1");
     }
 
     public void setTurretServoPos(double pos) {

@@ -4,6 +4,7 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 
+import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -55,7 +56,7 @@ public class FieldCentricTeleopLLMegaTags extends OpMode {
         }
         turretServo.init(hardwareMap);
         shooter.init(hardwareMap);
-        limelight.init(hardwareMap,5, telemetry);
+        limelight.init(hardwareMap,0, telemetry);
 
         headingPid.initPID(SERVO_P, SERVO_I, SERVO_D);
         headingAverage.initMovingAverage(MOVING_AVERAGE_SIZE);
@@ -92,12 +93,16 @@ public class FieldCentricTeleopLLMegaTags extends OpMode {
             follower.update();
         }
 
-        if(limelight.pollLimelight()) {
-            ll_goal_heading = headingAverage.updateAndGetAverage(limelight.result.getTx());
-            ll_goal_dist = distanceAverage.updateAndGetAverage(limelight.result.getBotposeAvgDist());
+        LLResult result = limelight.limelight.getLatestResult();
+        //if(limelight.pollLimelight()) {
+        telemetry.addData("results is", result);
+        if(result.isValid()) {
+            ll_goal_heading = headingAverage.updateAndGetAverage(result.getTx());
+            ll_goal_dist = distanceAverage.updateAndGetAverage(result.getBotposeAvgDist());
 
             telemetry.addData("dist", ll_goal_dist);
             telemetry.addData("heading", ll_goal_heading);
+            telemetry.addData("results", result);
         }
         else {
             // Clear readings if we don't see a target

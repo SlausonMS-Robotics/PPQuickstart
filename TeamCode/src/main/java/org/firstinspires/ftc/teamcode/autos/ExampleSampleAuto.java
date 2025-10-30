@@ -111,7 +111,7 @@ public class ExampleSampleAuto extends OpMode {
                      * Open outtake claw
                      * This can be done with a method like "servo.setPosition(OUTTAKE_CLAW_OPEN)"
                      */
-                    robotservo.closeGripper();
+
                     setPathState(2);
                 }
                 break;
@@ -136,8 +136,7 @@ public class ExampleSampleAuto extends OpMode {
             case 4:
                 // Checks if the t-value (path completion value) is past your pathEndTValueConstraint.
                 if (follower.atParametricEnd()) {
-                    /* Score Sample */
-                    robotservo.openGripper();
+
                     if (pathTimer.getElapsedTimeSeconds() > 1.5) {
                         follower.followPath(grabPickup2, true);
                         setPathState(5);
@@ -210,7 +209,7 @@ public class ExampleSampleAuto extends OpMode {
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startPose);
         robotservo.init(hardwareMap);
-        limelight.init(hardwareMap,5, follower, telemetry);
+        limelight.init(hardwareMap,5, telemetry);
         buildPaths();
     }
 
