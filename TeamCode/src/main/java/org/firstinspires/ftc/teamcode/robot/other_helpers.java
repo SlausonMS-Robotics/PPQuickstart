@@ -17,6 +17,7 @@ public class other_helpers {
 
     /**
      * Initializes the PID controller with the given coefficients.
+     *
      * @param p Proportional gain
      * @param i Integral gain
      * @param d Derivative gain
@@ -30,8 +31,9 @@ public class other_helpers {
 
     /**
      * Calculates the PID output based on the current and target states.
+     *
      * @param currentState The current measurement
-     * @param targetState The desired measurement
+     * @param targetState  The desired measurement
      * @return The calculated PID correction
      */
     public double updatePID(double currentState, double targetState) {
@@ -66,6 +68,7 @@ public class other_helpers {
 
     /**
      * Initializes the moving average with a specific size.
+     *
      * @param size The number of readings to average.
      */
     public void initMovingAverage(int size) {
@@ -75,6 +78,7 @@ public class other_helpers {
 
     /**
      * Adds a new reading and returns the new average.
+     *
      * @param reading The new measurement to add.
      * @return The new average of the readings.
      */
@@ -87,7 +91,7 @@ public class other_helpers {
         if (readings.isEmpty()) {
             return 0.0;
         }
-        
+
         double sum = 0;
         for (Double r : readings) {
             sum += r;
@@ -101,4 +105,30 @@ public class other_helpers {
     public void clearReadings() {
         readings.clear();
     }
+
+    // --- Flywheel Shooter Utilities ---
+    public static class FlywheelShooter {
+
+        // --- Linear Model Constants ---
+        //
+        private static final double RPM_PER_METER = 200; // The slope of the line (how much RPM to add per meter)
+        private static final double BASE_RPM = 3400;     // The base RPM at 0 meters (y-intercept)
+
+        /**
+         * Get required flywheel RPM for a given shot distance (m) using a linear model.
+         * A linear model is often more accurate than a simple physics model because
+         * it can be tuned to account for real-world factors like air resistance and energy loss.
+         */
+        public static double getRPMForDistance(double rangeMeters) {
+            if (rangeMeters <= 2) return BASE_RPM;
+            return BASE_RPM + (rangeMeters * RPM_PER_METER);
+        }
+
+        /** Predict horizontal range (m) for a given flywheel RPM. */
+        public static double getDistanceForRPM(double rpm) {
+            if (rpm <= BASE_RPM) return 0;
+            return (rpm - BASE_RPM) / RPM_PER_METER;
+        }
+    }
+
 }

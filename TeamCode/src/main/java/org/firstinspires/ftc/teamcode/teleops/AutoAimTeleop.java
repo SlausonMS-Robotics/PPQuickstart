@@ -129,15 +129,15 @@ public class AutoAimTeleop extends OpMode {
         // Skip if no updates
         if (result.getTimestamp() == lastTime) {
             telemetry.addData("No result update", lastTime);
-            telemetry.update();
-            return;
+            //telemetry.update();
+            //return;
         }
         if(result.isValid()) {
             lastTime = result.getTimestamp();
             double sysTime = System.currentTimeMillis();
-            telemetry.addData("Limelight TS", lastTime);
-            telemetry.addData("System Time", sysTime);
-            telemetry.addData("Delta Time", sysTime - lastTime);
+            //telemetry.addData("Limelight TS", lastTime);
+            //telemetry.addData("System Time", sysTime);
+            //telemetry.addData("Delta Time", sysTime - lastTime);
 
             ll_goal_heading = headingAverage.updateAndGetAverage(result.getTx());
             ll_goal_dist = distanceAverage.updateAndGetAverage(result.getBotposeAvgDist());
@@ -157,17 +157,21 @@ public class AutoAimTeleop extends OpMode {
         // runs. The controller may be trying to do work before Limelight sees an AprilTag.
         if (lastTime == 0.0) {
             telemetry.addData("Waiting for updates", lastTime);
-            telemetry.update();
-            return;
+            //telemetry.update();
+            //return;
         }
 
 
-        double shooter_velocity_scalar = 4000.0 / 60.0 / 3.3; //(Revs / second) / Meter
+        //double shooter_velocity_scalar = 4000.0 / 60.0 / 3.3; //(Revs / second) / Meter
         // Set shooter velocity based on distance, not heading
         if (ll_goal_dist > 0.1 && ll_goal_dist < 4){
-            double speed = shooter_velocity_scalar * ticks_per_rev * ll_goal_dist;
+            double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(ll_goal_dist);
+            double speed = targetRPM * ticks_per_rev / 60;
             shooter.setShooterVelocity(speed);
-            telemetry.addData("Speed", speed);
+            telemetry.addData("RPM", speed * 60 / ticks_per_rev);
+        }
+        else {
+            //shooter.setShooterVelocity(0);
         }
 
         if(Math.abs(ll_goal_heading) > 0.05){ // Only adjust if we are off-target
