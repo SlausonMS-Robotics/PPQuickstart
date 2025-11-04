@@ -13,7 +13,7 @@ public class other_helpers {
 
     // ---- Moving Average variables ----
     private ArrayList<Double> readings = new ArrayList<>();
-    private int movingAverageSize = 5; // Default size
+    private int movingAverageSize = 2; // Default size
 
     /**
      * Initializes the PID controller with the given coefficients.
