@@ -200,7 +200,7 @@ public class AutoAimTeleop extends OpMode {
                 telemetry.addData("Target Acquired", target_acquired);
             }
             else {
-                turretServo.setPosition(Math.min(Math.max(turretServo.getPosition() + (.001 * scanCW),turretPosMin),turretPosMax));
+                turretServo.setPosition(Math.min(Math.max(turretServo.getPosition() + (.0007 * scanCW),turretPosMin),turretPosMax));
                 if (turretServo.getPosition() >= turretPosMax || turretServo.getPosition() <= turretPosMin){
                     scanCW *= -1;
                 }
