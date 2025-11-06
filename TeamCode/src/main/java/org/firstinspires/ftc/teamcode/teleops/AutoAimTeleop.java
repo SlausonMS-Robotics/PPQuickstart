@@ -14,20 +14,16 @@ import org.firstinspires.ftc.teamcode.robot.motors;
 import org.firstinspires.ftc.teamcode.robot.other_helpers;
 
 /**
- * This is an example teleop that showcases movement and field-centric driving.
- *
- * @author Baron Henderson - 20077 The Indubitables
- * @version 2.0, 12/30/2024
+ * This is an example TeleOp for testing out the 2360 robot. It'll need to be updated to allow for
+ * targeting other AprilTags
  */
-//wifi direct password = 4EaUU37n
-
 @TeleOp(name = "Auto Aim Teleop", group = "23609")
 public class AutoAimTeleop extends OpMode {
     // With a 5-turn servo, the P gain needs to be much smaller. Start here for tuning.
     public static double SERVO_P = 0.015, SERVO_I = 0.0, SERVO_D = 0.005;
     private static final int MOVING_AVERAGE_SIZE = 3;
-    private static double scalar = 1.0;
-    private static int ticks_per_rev = 28;
+    private static final double scalar = 1.0;
+    private static final int ticks_per_rev = 28;
 
     private double ll_goal_dist = 0;
     private double ll_goal_heading = 0;
@@ -35,7 +31,7 @@ public class AutoAimTeleop extends OpMode {
     motors shooter = new motors();
     limelight3A limelight = new limelight3A();
     // Hardware that we're using
-    private ServoImplEx turretServo;     // servo0
+    private ServoImplEx turretServo;    // servo0
 
     // PID and Moving Average Helpers
     private other_helpers headingPid = new other_helpers();
@@ -46,15 +42,12 @@ public class AutoAimTeleop extends OpMode {
     private boolean use_PP = false;
     private final Pose startPose = new Pose(0,0,0);
 
-    private double lastTime = 0.0;
-
     double turretPos = 0.0;
     private boolean target_acquired = false;
 
-    private double turretPosMax = .75;
-    private double turretPosMin = .25;
+    private final double turretPosMax = .75;
+    private final double turretPosMin = .25;
     private int scanCW = 1;
-    private double lastCorrection = 0;
 
 
     /** This method is call once when init is played, it initializes the follower **/
