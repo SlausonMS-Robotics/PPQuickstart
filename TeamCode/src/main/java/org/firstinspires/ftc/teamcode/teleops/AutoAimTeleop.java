@@ -57,7 +57,7 @@ public class AutoAimTeleop extends OpMode {
             follower = Constants.createFollower(hardwareMap);
             follower.setStartingPose(startPose);
         }
-        // Initialize the servo that controls the turrent and center it.
+        // Initialize the servo that controls the turret and center it.
         turretServo = hardwareMap.get(ServoImplEx .class, "servo0");
         turretServo.setPosition(0.5);
 
@@ -132,7 +132,7 @@ public class AutoAimTeleop extends OpMode {
 
             // When the target is visible we need to do two high-level things
             // 1. The flywheels are spinning at the right speed to reach the goal.
-            // 2. The turrent is aimed at the AprilTag
+            // 2. The turret is aimed at the AprilTag
             if(target_acquired) {
                 // Set shooter velocity based on distance
                 if (ll_goal_dist > 0.1 && ll_goal_dist < 4) {
