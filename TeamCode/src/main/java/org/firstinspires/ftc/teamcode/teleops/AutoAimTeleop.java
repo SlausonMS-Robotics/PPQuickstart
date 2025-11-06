@@ -106,55 +106,42 @@ public class AutoAimTeleop extends OpMode {
             follower.update();
         }
 
-//        // Testing the servo
-//        double turretPos = turretServo.getPosition() + 0.05;
-//        if (turretPos > 0.75) {
-//            turretPos = 0.25;
-//        }
-//        turretServo.setPosition(turretPos);
-//        telemetry.addData("Turrent Pos", turretPos);
-//        telemetry.update();
-//        if (true) {
-//            try {
-//                Thread.sleep(500);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//            return;
-//        }
-
-//        try {
-//            Thread.sleep(500);
-//        }
-//        catch (InterruptedException ex) {
-//            // noop
-//        }
+        // Check the Limelight for new data every 10ms. Otherwise, skip this check which lets the
+        // robot continue doing whatever else it needs to.
         if(llTimer.getElapsedTime() >= 10) {
             LLResult result = limelight.limelight.getLatestResult();
             llTimer.resetTimer();
-            // Skip if no updates
 
+            // Limelight may not have a new result ready. If not, it'll return isValid() == false
             if (result.isValid()) {
+                // A result means that the AprilTag of interest can be found. We track that the
+                // target is acquired so that the auto-scanning code doesn't run.
                 target_acquired = true;
                 targetTimer.resetTimer();
 
+                // The main things returned by Limelight pipeline that looks for one AprilTag are
+                // x-axis, y-axis and an estimated average distance to the AprilTag detected.
+                // ll_goal_heading is how far off in the x-axis the AprilTag is (e.g. left or right)
+                // ll_goal_dist is the estimated average distance to the AprilTag
                 ll_goal_heading = headingAverage.updateAndGetAverage(result.getTx());
                 ll_goal_dist = distanceAverage.updateAndGetAverage(result.getBotposeAvgDist());
 
                 telemetry.addData("dist", ll_goal_dist);
                 telemetry.addData("heading", ll_goal_heading);
             } else {
-
-                if (targetTimer.getElapsedTime()>=650){ //if the limelight hasn't seen the Apriltag for this many ms
+                // If we haven't see the AprilTag in awhile, start auto-scanning to try and find it.
+                // The cutoff here is in milliseconds.
+                if (targetTimer.getElapsedTime()>=650){
                     target_acquired = false;
                     targetTimer.resetTimer();
                 }
             }
 
+            // When the target is visible we need to do two high-level things
+            // 1. The flywheels are spinning at the right speed to reach the goal.
+            // 2. The turrent is aimed at the AprilTag
             if(target_acquired) {
-
-                //double shooter_velocity_scalar = 4000.0 / 60.0 / 3.3; //(Revs / second) / Meter
-                // Set shooter velocity based on distance, not heading
+                // Set shooter velocity based on distance
                 if (ll_goal_dist > 0.1 && ll_goal_dist < 4) {
                     double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(ll_goal_dist);
                     double speed = targetRPM * ticks_per_rev / 60;
@@ -162,14 +149,17 @@ public class AutoAimTeleop extends OpMode {
                     telemetry.addData("RPM", speed * 60 / ticks_per_rev);
                 }
 
-                if (Math.abs(ll_goal_heading) > 0.01) { // Only adjust if we are off-target
+                // Adjust the turret to aim at the AprilTag. Only do this if we're far enough off.
+                // The cutoff makes it so that this code is skipped, if we're close to aimed correctly.
+                if (Math.abs(ll_goal_heading) > 0.01) {
+                    // Proportional-Integral-Derivative (PID) Controller is used to aim the turret.
+                    // See https://en.wikipedia.org/wiki/Proportional%E2%80%93integral%E2%80%93derivative_controller
                     double pidOutput = headingPid.updatePID(ll_goal_heading / 500, 0); // Pass current heading and target (0)
-//            double pidOutput = headingPid.updatePID(ll_goal_heading, 0); // Pass current heading and target (0)
-//            double pidOutput = ll_goal_heading / 500;
 
                     telemetry.addData("position", turretServo.getPosition());
                     telemetry.addData("pidOutput", pidOutput);
 
+                    // Changes to the turret are limited to avoid too big of a change.
                     pidOutput = Math.min(Math.max(pidOutput, -0.01), 0.01);
                     if(pidOutput >= 0){
                         scanCW = 1;
@@ -177,14 +167,12 @@ public class AutoAimTeleop extends OpMode {
                     else {
                         scanCW = -1;
                     }
-//            pidOutput = Math.min(Math.max(pidOutput, -0.001), 0.001);
                     telemetry.addData("Clamped pidOutput", pidOutput);
 
-                    //
-//            double turretPosition = turretServo.getPosition() - pidOutput;
-                    // Needed for headingPid above
+                    // Calculate the updated turret position.
                     double turretPosition = turretServo.getPosition() + pidOutput;
-
+                    // Clamp how far the turret can go in either direction. The servo can go farther
+                    // but the cords connecting everything can't stretch that far.
                     if (turretPosition < turretPosMin) {
                         turretPosition = turretPosMin;
                         telemetry.addData("Clamping", turretPosMin);
@@ -193,13 +181,15 @@ public class AutoAimTeleop extends OpMode {
                         turretPosition = turretPosMax;
                         telemetry.addData("Clamping", turretPosMax);
                     }
-
+                    // Finally, update the position of the turret
                     telemetry.addData("Turret Pos", turretPosition);
                     turretServo.setPosition(turretPosition);
                 }
                 telemetry.addData("Target Acquired", target_acquired);
             }
             else {
+                // This does the scanning for when the AprilTag can't be found by the pipeline.
+                // The code will move the turret all the way from side-to-side until it sees the tag.
                 turretServo.setPosition(Math.min(Math.max(turretServo.getPosition() + (.0007 * scanCW),turretPosMin),turretPosMax));
                 if (turretServo.getPosition() >= turretPosMax || turretServo.getPosition() <= turretPosMin){
                     scanCW *= -1;
