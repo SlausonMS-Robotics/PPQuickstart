@@ -22,7 +22,7 @@ public class AutoAimTeleop extends OpMode {
     // With a 5-turn servo, the P gain needs to be much smaller. Start here for tuning.
     public static double SERVO_P = 0.015, SERVO_I = 0.0, SERVO_D = 0.005;
     private static final int MOVING_AVERAGE_SIZE = 3;
-    private static final double scalar = 1.0;
+    private static double scalar = 1.0;
     private static final int ticks_per_rev = 28;
 
     private double ll_goal_dist = 0;
