@@ -23,6 +23,9 @@ import org.firstinspires.ftc.teamcode.robot.servos;
  */
 @TeleOp(name = "Auto Aim Teleop", group = "23609")
 public class AutoAimTeleop extends OpMode {
+
+    private static final char ALLIANCE_COLOR = 'b';
+    //private static final char ALLIANCE_COLOR = 'r';
     private static final int MOVING_AVERAGE_SIZE = 3;
     private static double scalar = 1.0;
     private static final int ticks_per_rev = 28;
@@ -41,6 +44,7 @@ public class AutoAimTeleop extends OpMode {
 
     Follower follower;
     private boolean use_PP = true; // Enabled Pedro Pathing for fusion
+    private boolean use_LL = true;
     private final Pose startPose = new Pose(0,0,0);
 
     double curBotPoseX = 0;
@@ -78,6 +82,8 @@ public class AutoAimTeleop extends OpMode {
     /** This method is called continuously after Init while waiting to be started. **/
     @Override
     public void init_loop() {
+
+        //add button to select alliance color here
     }
 
     /** This method is called once at the start of the OpMode. **/
@@ -93,7 +99,7 @@ public class AutoAimTeleop extends OpMode {
     /** This is the main loop of the opmode and runs continuously after play **/
     @Override
     public void loop() {
-        long now = System.nanoTime();
+
 
         if(use_PP) {
             // Your existing drive code...
@@ -106,20 +112,32 @@ public class AutoAimTeleop extends OpMode {
             }
 
             follower.update();
+            long now = System.nanoTime();
             fusion.pushOdomSample(now); // Push new odometry data for fusion
 
             if (poseTimer.getElapsedTime() >= 10) { //update servo tracking based on current pose every x ms
                 getCurBotPose();
                 Servos.pointTurretToGoal(curBotPoseX, curBotPoseY, curBotPoseHead, blueGoalX, blueGoalY);
+                if(ALLIANCE_COLOR == 'b'){
+                    ll_goal_dist = other_helpers.distanceToBlueGoal(curBotPoseX, curBotPoseY);
+                }
+                else {
+                    ll_goal_dist = other_helpers.distanceToRedGoal(curBotPoseX, curBotPoseY);
+                }
+                double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(ll_goal_dist);
+                double speed = targetRPM * ticks_per_rev / 60;
+                shooter.setShooterVelocity(speed);
                 poseTimer.resetTimer();
             }
+
             if (llPoseTimer.getElapsedTime() >= 100) { // Fused pose update from Limelight
+                now = System.nanoTime();
                 fusion.updatePoseFromLimelight(now);
                 llPoseTimer.resetTimer();
             }
         }
 
-        if(llTimer.getElapsedTime() >= 100) {
+        if(llTimer.getElapsedTime() >= 100 && use_LL) {
             LLResult result = limelight.limelight.getLatestResult();
             llTimer.resetTimer();
 
