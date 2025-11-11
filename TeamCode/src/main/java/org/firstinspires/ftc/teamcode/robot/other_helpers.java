@@ -9,6 +9,12 @@ public class other_helpers {
     private double p, i, d;
     private double integralSum = 0;
     private double lastError = 0;
+
+    public static int blueGoalX = 12;
+    public static int blueGoalY = 136;
+    public static int redGoalX = 132;
+    public static int redGoalY = 136;
+
     private ElapsedTime timer = new ElapsedTime();
 
     // ---- Moving Average variables ----
@@ -112,6 +118,7 @@ public class other_helpers {
         // --- Linear Model Constants ---
         //
         private static final double RPM_PER_METER = 200; // The slope of the line (how much RPM to add per meter)
+        private static final double MAX_RPM = 4200;
         private static final double BASE_RPM = 3400;     // The base RPM at 0 meters (y-intercept)
 
         /**
@@ -121,6 +128,7 @@ public class other_helpers {
          */
         public static double getRPMForDistance(double rangeMeters) {
             if (rangeMeters <= 2) return BASE_RPM;
+            if (rangeMeters >= 3) return MAX_RPM;
             return BASE_RPM + (rangeMeters * RPM_PER_METER);
         }
 
@@ -129,6 +137,78 @@ public class other_helpers {
             if (rpm <= BASE_RPM) return 0;
             return (rpm - BASE_RPM) / RPM_PER_METER;
         }
+    }
+
+    /**
+     * Calculates the distance from the robot's current position to the blue goal.
+     *
+     * @param currentX The robot's current X coordinate.
+     * @param currentY The robot's current Y coordinate.
+     * @return The distance to the blue goal.
+     */
+    public static double distanceToBlueGoal(double currentX, double currentY) {
+        double deltaX = blueGoalX - currentX;
+        double deltaY = blueGoalY - currentY;
+        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    }
+
+    /**
+     * Calculates the distance from the robot's current position to the red goal.
+     *
+     * @param currentX The robot's current X coordinate.
+     * @param currentY The robot's current Y coordinate.
+     * @return The distance to the red goal.
+     */
+    public static double distanceToRedGoal(double currentX, double currentY) {
+        double deltaX = redGoalX - currentX;
+        double deltaY = redGoalY - currentY;
+        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    }
+
+    /**
+     * Calculates the heading error to the blue goal.
+     *
+     * @param currentX The robot's current X coordinate.
+     * @param currentY The robot's current Y coordinate.
+     * @param currentHeading The robot's current heading in radians.
+     * @return The heading error in radians.
+     */
+    public static double getHeadingErrorToBlueGoal(double currentX, double currentY, double currentHeading) {
+        double angleToGoal = Math.atan2(blueGoalY - currentY, blueGoalX - currentX);
+        double headingError = angleToGoal - currentHeading;
+
+        // Normalize the angle to be between -PI and PI
+        while (headingError <= -Math.PI) {
+            headingError += 2 * Math.PI;
+        }
+        while (headingError > Math.PI) {
+            headingError -= 2 * Math.PI;
+        }
+
+        return headingError;
+    }
+
+    /**
+     * Calculates the heading error to the red goal.
+     *
+     * @param currentX The robot's current X coordinate.
+     * @param currentY The robot's current Y coordinate.
+     * @param currentHeading The robot's current heading in radians.
+     * @return The heading error in radians.
+     */
+    public static double getHeadingErrorToRedGoal(double currentX, double currentY, double currentHeading) {
+        double angleToGoal = Math.atan2(redGoalY - currentY, redGoalX - currentX);
+        double headingError = angleToGoal - currentHeading;
+
+        // Normalize the angle to be between -PI and PI
+        while (headingError <= -Math.PI) {
+            headingError += 2 * Math.PI;
+        }
+        while (headingError > Math.PI) {
+            headingError -= 2 * Math.PI;
+        }
+
+        return headingError;
     }
 
 }
