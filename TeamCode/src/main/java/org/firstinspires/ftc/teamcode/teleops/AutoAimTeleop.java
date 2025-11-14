@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.robot.PoseStorage;
 import org.firstinspires.ftc.teamcode.robot.limelight3A;
 import org.firstinspires.ftc.teamcode.robot.localizer_fusion;
 import org.firstinspires.ftc.teamcode.robot.motors;
@@ -29,8 +30,7 @@ public class AutoAimTeleop extends OpMode {
 
     private boolean isIntake = false;
     private boolean isTransfer = false;
-    private static final char ALLIANCE_COLOR = 'b';
-    //private static final char ALLIANCE_COLOR = 'r';
+    private String myAllianceColor = "blue";
     private static final int MOVING_AVERAGE_SIZE = 3;
     private static double scalar = 1.0;
     private static final int ticks_per_rev = 28;
@@ -49,10 +49,11 @@ public class AutoAimTeleop extends OpMode {
     private other_helpers headingAverage = new other_helpers();
     private other_helpers distanceAverage = new other_helpers();
 
+
     Follower follower;
     private boolean use_PP = true; // Enabled Pedro Pathing for fusion
     private boolean use_LL = true;
-    private final Pose startPose = new Pose(0,0,0);
+    private Pose startPose = new Pose(0,0,0);
 
     double curBotPoseX = 0;
     double curBotPoseY = 0;
@@ -76,6 +77,7 @@ public class AutoAimTeleop extends OpMode {
 
         if (use_PP) {
             follower = Constants.createFollower(hardwareMap);
+            startPose = PoseStorage.currentPose;
             follower.setStartingPose(startPose);
             fusion = new localizer_fusion(follower, limelight);
             getCurBotPose();
@@ -89,13 +91,28 @@ public class AutoAimTeleop extends OpMode {
         poseTimer = new Timer();
         llPoseTimer = new Timer();
         buttonDebounceTimer = new Timer();
+        
+        myAllianceColor = PoseStorage.allianceColor;
+        telemetry.addData("Alliance Color", myAllianceColor);
+        telemetry.update();
     }
 
     /** This method is called continuously after Init while waiting to be started. **/
     @Override
     public void init_loop() {
 
-        //add button to select alliance color here
+        if(buttonDebounceTimer.getElapsedTime() > 500 && (gamepad1.start || gamepad2.start)){
+            buttonDebounceTimer.resetTimer();
+            if("blue".equals(myAllianceColor)){
+                myAllianceColor = "red";
+            }
+            else {
+                myAllianceColor = "blue";
+            }
+            telemetry.addData("Alliance Color", myAllianceColor);
+            telemetry.update();
+            
+        }
     }
 
     /** This method is called once at the start of the OpMode. **/
@@ -105,6 +122,7 @@ public class AutoAimTeleop extends OpMode {
             follower.startTeleopDrive(false);
             poseTimer.resetTimer();
             llPoseTimer.resetTimer();
+            
         }
     }
 
@@ -112,7 +130,7 @@ public class AutoAimTeleop extends OpMode {
     @Override
     public void loop() {
 
-        if (buttonDebounceTimer.getElapsedTime() >= 250) { //debounce all buttons
+        if (buttonDebounceTimer.getElapsedTime() >= 500 && other_helpers.anyButtonPressed(gamepad2)) { //debounce all buttons
 
             if (gamepad2.right_bumper) {
                 shooterSpeedAdjust += shooterSpeedAjustIncrement;
@@ -129,7 +147,10 @@ public class AutoAimTeleop extends OpMode {
             }
 
 
-            if (gamepad2.a) { //transfer on/off
+
+
+
+            if (gamepad2.y) { //transfer on/off (shoot)
                 if (!isIntake || !isTransfer) {
                     intake.setIntakePower(intakePow);
                     transfer.setTransferPower(tranferPow);
@@ -142,10 +163,10 @@ public class AutoAimTeleop extends OpMode {
                     isIntake = false;
                     isTransfer = false;
                 }
-                buttonDebounceTimer.resetTimer();
+
             }
 
-            if (gamepad1.2) { //intake on/off
+            if (gamepad1.a) { //intake on/off
                 if (!isIntake) {
                     intake.setIntakePower(intakePow);
                     transfer.setTransferPower(0);
@@ -157,18 +178,24 @@ public class AutoAimTeleop extends OpMode {
                     isIntake = false;
                     isTransfer = false;
                 }
-                buttonDebounceTimer.resetTimer();
+
             }
+            buttonDebounceTimer.resetTimer();
         }
 
         if(use_PP) {
             // drive code...
             if (gamepad1.left_trigger > .1) { //driver
-                scalar = .5;
+                scalar = .5; //sets speed of change -> lower = slower
                 follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 1), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar, 1), false);
             } else {
-                scalar = 1.0;
+                scalar = 1.0; //sets speed of change -> lower = slower
                 follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 3), Math.pow(-gamepad1.left_stick_x * scalar, 3), Math.pow(-gamepad1.right_stick_x * scalar, 3), false);
+            }
+
+            if (gamepad2.right_trigger > .1) { //let gamepad2 control the heading of the robot for shooting if needed
+                scalar = .5;
+                follower.setTeleOpDrive(0, 0, Math.pow(-gamepad2.left_stick_x * scalar, 1), false); //control only the heading
             }
 
             follower.update();
@@ -178,7 +205,7 @@ public class AutoAimTeleop extends OpMode {
             if (poseTimer.getElapsedTime() >= 10) { //update servo tracking based on current pose every x ms
                 getCurBotPose();
                 Servos.pointTurretToGoal(curBotPoseX, curBotPoseY, curBotPoseHead, blueGoalX, blueGoalY, turretPosAdjust);
-                if(ALLIANCE_COLOR == 'b'){
+                if("blue".equals(myAllianceColor)){
                     ll_goal_dist = other_helpers.distanceToBlueGoal(curBotPoseX, curBotPoseY);
                 }
                 else {
@@ -192,7 +219,7 @@ public class AutoAimTeleop extends OpMode {
 
             if (llPoseTimer.getElapsedTime() >= 100) { // Fused pose update from Limelight
                 now = System.nanoTime();
-                fusion.updatePoseFromLimelight(now);
+                fusion.updateFromLimelight(now);
                 llPoseTimer.resetTimer();
             }
         }

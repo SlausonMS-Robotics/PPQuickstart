@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.robot.PoseStorage;
 
 
 @Autonomous(name = "Example Auto", group = "Examples")
@@ -207,6 +208,8 @@ public class decode_auto_1 extends OpMode {
 
     /** We do not use this because everything should automatically disable **/
     @Override
-    public void stop() {}
+    public void stop() {
+        PoseStorage.currentPose = follower.getPose(); // Save current pose to PoseStorage
+    }
 
 }

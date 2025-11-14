@@ -1,14 +1,10 @@
 package org.firstinspires.ftc.teamcode.autos;
 
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
@@ -16,12 +12,13 @@ import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.robot.PoseStorage;
 
 @Autonomous(name = "Blue 12 Rear 1 Auto", group = "Autonomous")
 @Configurable // Panels
 public class Blue_12_Rear_1 extends OpMode {
 
-
+    private String myAllianceColor = "blue";
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
     private int pathState; // Current autonomous path state (state machine)
@@ -29,7 +26,7 @@ public class Blue_12_Rear_1 extends OpMode {
 
     private Timer pathTimer, actionTimer, opmodeTimer;
 
-
+    @Override
     public void init() {
         panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
 
@@ -292,9 +289,15 @@ public class Blue_12_Rear_1 extends OpMode {
 
     /** We do not use this because everything should automatically disable **/
     @Override
-    public void stop() {}
+    public void stop() {
+
+        PoseStorage.currentPose = follower.getPose(); // Save current pose to PoseStorage
+        PoseStorage.allianceColor = myAllianceColor; //Save alliance color to PoseStorage
+
+    }
 
 }
+
 
 
 
