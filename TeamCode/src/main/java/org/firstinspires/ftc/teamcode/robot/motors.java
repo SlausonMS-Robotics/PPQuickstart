@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 public class motors {
 
-    private DcMotorEx shooterMotor1, shooterMotor0;
+    private DcMotorEx shooterMotor1, shooterMotor0, transferMotor, intakeMotor;
 
     /**
      * Initializes the shooter motors.
@@ -17,10 +17,22 @@ public class motors {
         shooterMotor1 = hardwareMap.get(DcMotorEx.class, "motor1");
         shooterMotor0 = hardwareMap.get(DcMotorEx.class, "motor0");
         shooterMotor0.setDirection(DcMotorSimple.Direction.REVERSE);
+        transferMotor = hardwareMap.get(DcMotorEx.class, "motor2");
+        intakeMotor = hardwareMap.get(DcMotorEx.class, "motor3");
 
         shooterMotor0.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         shooterMotor1.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
     }
+
+    public void setIntakePower(double power){
+        intakeMotor.setPower(power);
+    }
+
+    public void setTransferPower(double power){
+        transferMotor.setPower(power);
+    }
+
+
 
     public void shooterPower(double pow){
         shooterMotor0.setPower(pow);

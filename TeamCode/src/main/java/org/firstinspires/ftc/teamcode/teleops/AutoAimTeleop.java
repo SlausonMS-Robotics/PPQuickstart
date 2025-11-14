@@ -24,6 +24,11 @@ import org.firstinspires.ftc.teamcode.robot.servos;
 @TeleOp(name = "Auto Aim Teleop", group = "23609")
 public class AutoAimTeleop extends OpMode {
 
+    private static final double intakePow = 1;
+    private static final double tranferPow = 1;
+
+    private boolean isIntake = false;
+    private boolean isTransfer = false;
     private static final char ALLIANCE_COLOR = 'b';
     //private static final char ALLIANCE_COLOR = 'r';
     private static final int MOVING_AVERAGE_SIZE = 3;
@@ -32,8 +37,10 @@ public class AutoAimTeleop extends OpMode {
 
     private double ll_goal_dist = 0;
     private double ll_goal_heading = 0;
-    private Timer targetTimer, llTimer, poseTimer, llPoseTimer;
+    private Timer targetTimer, llTimer, poseTimer, llPoseTimer, buttonDebounceTimer;
     motors shooter = new motors();
+    motors intake = new motors();
+    motors transfer = new motors();
     limelight3A limelight = new limelight3A();
     servos Servos = new servos(); // Use the servos class
     private localizer_fusion fusion;
@@ -50,6 +57,10 @@ public class AutoAimTeleop extends OpMode {
     double curBotPoseX = 0;
     double curBotPoseY = 0;
     double curBotPoseHead = 0;
+    private int shooterSpeedAjustIncrement = 50;
+    private int shooterSpeedAdjust = 0;
+    private double turretPosAdjustIncrement = .008;
+    private double turretPosAdjust = 0;
     private boolean target_acquired = false;
 
     private int scanCW = 1;
@@ -59,7 +70,7 @@ public class AutoAimTeleop extends OpMode {
     @Override
     public void init() {
         // Initialize all our robot hardware
-        shooter.init(hardwareMap);
+        shooter.init(hardwareMap); //initializes all motors, not just the shooter
         Servos.init(hardwareMap); // This now initializes the turret servo and PID
         limelight.init(hardwareMap,0, telemetry);
 
@@ -77,6 +88,7 @@ public class AutoAimTeleop extends OpMode {
         llTimer = new Timer();
         poseTimer = new Timer();
         llPoseTimer = new Timer();
+        buttonDebounceTimer = new Timer();
     }
 
     /** This method is called continuously after Init while waiting to be started. **/
@@ -100,10 +112,58 @@ public class AutoAimTeleop extends OpMode {
     @Override
     public void loop() {
 
+        if (buttonDebounceTimer.getElapsedTime() >= 250) { //debounce all buttons
+
+            if (gamepad2.right_bumper) {
+                shooterSpeedAdjust += shooterSpeedAjustIncrement;
+            }
+            if (gamepad2.left_bumper) {
+                shooterSpeedAdjust -= shooterSpeedAjustIncrement;
+            }
+
+            if (gamepad2.dpad_right) {
+                turretPosAdjust += turretPosAdjustIncrement;
+            }
+            if (gamepad2.dpad_left) {
+                turretPosAdjust -= turretPosAdjustIncrement;
+            }
+
+
+            if (gamepad2.a) { //transfer on/off
+                if (!isIntake || !isTransfer) {
+                    intake.setIntakePower(intakePow);
+                    transfer.setTransferPower(tranferPow);
+                    isIntake = true;
+                    isTransfer = true;
+
+                } else {
+                    intake.setIntakePower(0);
+                    transfer.setTransferPower(0);
+                    isIntake = false;
+                    isTransfer = false;
+                }
+                buttonDebounceTimer.resetTimer();
+            }
+
+            if (gamepad1.2) { //intake on/off
+                if (!isIntake) {
+                    intake.setIntakePower(intakePow);
+                    transfer.setTransferPower(0);
+                    isIntake = true;
+                    isTransfer = false;
+                } else {
+                    intake.setIntakePower(0);
+                    transfer.setTransferPower(0);
+                    isIntake = false;
+                    isTransfer = false;
+                }
+                buttonDebounceTimer.resetTimer();
+            }
+        }
 
         if(use_PP) {
-            // Your existing drive code...
-            if (gamepad1.left_trigger > .1) {
+            // drive code...
+            if (gamepad1.left_trigger > .1) { //driver
                 scalar = .5;
                 follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 1), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar, 1), false);
             } else {
@@ -117,7 +177,7 @@ public class AutoAimTeleop extends OpMode {
 
             if (poseTimer.getElapsedTime() >= 10) { //update servo tracking based on current pose every x ms
                 getCurBotPose();
-                Servos.pointTurretToGoal(curBotPoseX, curBotPoseY, curBotPoseHead, blueGoalX, blueGoalY);
+                Servos.pointTurretToGoal(curBotPoseX, curBotPoseY, curBotPoseHead, blueGoalX, blueGoalY, turretPosAdjust);
                 if(ALLIANCE_COLOR == 'b'){
                     ll_goal_dist = other_helpers.distanceToBlueGoal(curBotPoseX, curBotPoseY);
                 }
@@ -126,7 +186,7 @@ public class AutoAimTeleop extends OpMode {
                 }
                 double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(ll_goal_dist);
                 double speed = targetRPM * ticks_per_rev / 60;
-                shooter.setShooterVelocity(speed);
+                shooter.setShooterVelocity(speed + shooterSpeedAdjust); // Set shooter velocity using the adjustment value from the gamepad
                 poseTimer.resetTimer();
             }
 
@@ -162,7 +222,7 @@ public class AutoAimTeleop extends OpMode {
                 if (ll_goal_dist > 0.1 && ll_goal_dist < 4) {
                     double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(ll_goal_dist);
                     double speed = targetRPM * ticks_per_rev / 60;
-                    shooter.setShooterVelocity(speed);
+                    shooter.setShooterVelocity(speed + shooterSpeedAdjust);
                     telemetry.addData("RPM", speed * 60 / ticks_per_rev);
                 }
 
@@ -171,8 +231,8 @@ public class AutoAimTeleop extends OpMode {
                     // The heading from limelight is in degrees. Convert to radians for the PID controller.
                     double headingErrorRadians = Math.toRadians(ll_goal_heading);
 
-                    // Call the new method to update the turret position
-                    Servos.updateTurretWithPID(headingErrorRadians);
+                    // Call the new method to update the turret position using the PID controller and the manual adjustment from the gamepad
+                    Servos.updateTurretWithPID(headingErrorRadians + turretPosAdjust);
 
                     // Update scan direction for when we lose the target
                     if(headingErrorRadians >= 0){
@@ -187,13 +247,15 @@ public class AutoAimTeleop extends OpMode {
                 telemetry.addData("Target Acquired", target_acquired);
             }
             else {
-                // Scan for the AprilTag
+                /*// Scan for the AprilTag
                 double newScanPos = Servos.getTurretServoPos() + (0.0007 * scanCW);
                 Servos.setTurretServoPos(newScanPos);
                 if (Servos.getTurretServoPos() >= servos.TURRET_MAX_POS || Servos.getTurretServoPos() <= servos.TURRET_MIN_POS){
                     scanCW *= -1;
                 }
                 telemetry.addData("Target Acquired", target_acquired);
+
+                 */
             }
             telemetry.update();
         }
