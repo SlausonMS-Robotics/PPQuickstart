@@ -50,7 +50,7 @@ public class servos {
      * @param goalX The target's X coordinate.
      * @param goalY The target's Y coordinate.
      */
-    public void pointTurretToGoal(double robotX, double robotY, double robotHeading, double goalX, double goalY) {
+    public void pointTurretToGoal(double robotX, double robotY, double robotHeading, double goalX, double goalY, double manualRadAdjust) {
         // Step 1: Calculate the world angle from the robot to the goal.
         double worldAngleToGoal = Math.atan2(goalY - robotY, goalX - robotX);
 
@@ -80,7 +80,7 @@ public class servos {
         }
 
         // Step 7: Pass the error to the PID updater.
-        updateTurretWithPID(turretError);
+        updateTurretWithPID(turretError + manualRadAdjust); //update the current position using the PID and the manual adjustment from the gamepad
     }
 
 
