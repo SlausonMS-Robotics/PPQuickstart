@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.robot;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 
 // Note: This class assumes it is being used in an OpMode where `follower.update()` is called
@@ -18,8 +19,6 @@ public class localizer_fusion {
     private final int HISTORY_CAP = 60; // ~1s if you push at 60Hz
 
     // --- Tuning knobs ---
-    // Max distance from a tag to accept a measurement
-    private double farTagMeters = 4.0;
     // How much the vision measurement can disagree with odometry before we reject it
     private double linearGateIn = 12.0;   // innovation gate (in)
     private double angularGateDeg = 20.0; // innovation gate (deg)
@@ -71,43 +70,37 @@ public class localizer_fusion {
      * the current odometry to produce a corrected pose.
      * @param nowNanos The current time from `System.nanoTime()`.
      */
-    public void updatePoseFromLimelight(long nowNanos) {
+    public void updateFromLimelight(long nowNanos) {
         if (ll.limelight == null) return;
 
         LLResult result = ll.limelight.getLatestResult();
-        // The getBotpose() method returns a Pose3D object.
-        Pose3D llbotpose = result.getBotpose();
+        Pose3D botpose = result.getBotpose();
 
         // --- Basic Quality Gates ---
-        if (llbotpose == null || !result.isValid()) {
+        if (botpose == null || !result.isValid()) {
             return; // No valid pose
-        }
-        double avgTagDistanceMeters = result.getBotposeAvgDist();
-        if (avgTagDistanceMeters > farTagMeters) {
-            return; // Too far from tags
         }
 
         // --- Latency Compensation ---
-        // Get the timestamp of the vision measurement by getting the total latency.
-        double latencyMs = result.getTargetingLatency();
+        // Get total latency (capture + pipeline) for accurate timestamping
+        double latencyMs = result.getCaptureLatency() + result.getTargetingLatency();
         long measNanos = nowNanos - (long)(latencyMs * 1e6);
-        // Get the odometry pose from our history at that time
         Pose odomAtMeas = getOdomAtTime(measNanos);
 
         // --- Innovation Check (Outlier Rejection) ---
         // Convert Limelight pose (meters, degrees) to our system (inches, radians)
-        double visionX = llbotpose.getPosition().x * M_TO_IN;
-        double visionY = llbotpose.getPosition().y* M_TO_IN;
-        double visionHeading = Math.toRadians(llbotpose.getOrientation().getYaw()); // yaw
+        double visionX = botpose.getPosition().x * M_TO_IN;
+        double visionY = botpose.getPosition().y * M_TO_IN;
+        // The robot's heading (yaw) is extracted from the Orientation of the Pose3D object.
+        double visionHeading = botpose.getOrientation().getYaw(AngleUnit.RADIANS);
+
         Pose visionAtMeas = new Pose(visionX, visionY, visionHeading);
 
-        // Innovation is the difference between the vision pose and the odometry pose at the time of measurement
         double dx = visionAtMeas.getX() - odomAtMeas.getX();
         double dy = visionAtMeas.getY() - odomAtMeas.getY();
         double dPos = Math.hypot(dx, dy);
         double dHeadDeg = Math.toDegrees(angleWrap(visionAtMeas.getHeading() - odomAtMeas.getHeading()));
 
-        // Motion-aware gate: be stricter if the robot is moving fast
         double speed = follower.getVelocity().getMagnitude();
         double linGate = (speed > minSpeedForRejectInPerS) ? linearGateIn : (linearGateIn * 1.5);
         double angGate = (speed > minSpeedForRejectInPerS) ? angularGateDeg : (angularGateDeg * 1.5);
@@ -117,15 +110,12 @@ public class localizer_fusion {
         }
 
         // --- Fuse Poses ---
-        // Calculate a blend gain (K) based on measurement quality
-        double K = qualityWeight(result, avgTagDistanceMeters);
+        double K = qualityWeight(result);
         if (K <= 0) return;
 
-        // Extrapolate the vision measurement forward to the present time
         Pose odomNow = follower.getPose();
         Pose visionNow = extrapolateToNow(visionAtMeas, odomAtMeas, odomNow);
 
-        // Apply the correction (innovation) weighted by the gain K
         Pose fused = new Pose(
                 odomNow.getX() + K * (visionNow.getX() - odomNow.getX()),
                 odomNow.getY() + K * (visionNow.getY() - odomNow.getY()),
@@ -140,12 +130,10 @@ public class localizer_fusion {
      * vision measurement was taken.
      */
     private Pose extrapolateToNow(Pose visionAtMeas, Pose odomAtMeas, Pose odomNow) {
-        // Calculate the robot's movement according to odometry
         double dx = odomNow.getX() - odomAtMeas.getX();
         double dy = odomNow.getY() - odomAtMeas.getY();
         double dHeading = angleWrap(odomNow.getHeading() - odomAtMeas.getHeading());
 
-        // Apply that same delta to the vision measurement
         return new Pose(
                 visionAtMeas.getX() + dx,
                 visionAtMeas.getY() + dy,
@@ -163,16 +151,24 @@ public class localizer_fusion {
     }
 
     /**
-     * Calculates a confidence weight (0.0 to 0.5) for a given Limelight measurement.
+     * Calculates a confidence weight (0.0 to 0.5) for a given Limelight measurement based on the number of tags seen.
      * A higher weight means the measurement is considered more trustworthy.
-     * Note: The Limelight FTCSDK doesn't expose tag count or ambiguity, so this is a simplified heuristic.
      */
-    private double qualityWeight(LLResult result, double avgTagDistanceMeters) {
-        double w = 0.1; // Start with a base weight
-        if (avgTagDistanceMeters < 2.0) w += 0.2;
-        if (avgTagDistanceMeters < 1.0) w += 0.1;
+    private double qualityWeight(LLResult result) {
+        int numTags = result.getBotposeTagCount();
+        // If we see no tags, the pose is invalid. Return a weight of 0.
+        if (numTags < 1) {
+            return 0.0;
+        }
 
-        // Clamp to a max of 0.5 to prevent single measurements from drastically changing the pose
+        // Start with a base weight for seeing at least one tag.
+        // A single tag pose is usable, but less reliable than a multi-tag pose.
+        double w = 0.15;
+
+        // Increase the weight if we see more tags, as this increases confidence.
+        if (numTags >= 2) w += 0.2;
+
+        // Clamp to a maximum weight to prevent single measurements from drastically changing the pose
         return Math.min(0.5, w);
     }
 }

@@ -13,12 +13,13 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.robot.PoseStorage;
 
 @Autonomous(name = "Red 12 Rear 1 Auto", group = "Autonomous")
 @Configurable // Panels
 public class Red_12_Rear_1 extends OpMode {
 
-
+    private String myAllianceColor = "red";
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
     private int pathState; // Current autonomous path state (state machine)
@@ -287,9 +288,12 @@ public class Red_12_Rear_1 extends OpMode {
         actionTimer.resetTimer();
     }
 
-    /** We do not use this because everything should automatically disable **/
     @Override
-    public void stop() {}
+    public void stop() {
+        PoseStorage.currentPose = follower.getPose(); // Save current pose to PoseStorage
+        PoseStorage.allianceColor = myAllianceColor; //Save alliance color to PoseStorage
+
+    }
 
 }
 

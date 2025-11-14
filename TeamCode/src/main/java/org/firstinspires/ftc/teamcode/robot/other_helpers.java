@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.robot;
 
+
+
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.ArrayList;
 
@@ -138,6 +141,14 @@ public class other_helpers {
             return (rpm - BASE_RPM) / RPM_PER_METER;
         }
     }
+
+    public static boolean anyButtonPressed(Gamepad g) { //checks to see if any buttons have been pressed
+        return g.a || g.b || g.x || g.y ||
+                g.dpad_up || g.dpad_down || g.dpad_left || g.dpad_right ||
+                g.left_bumper || g.right_bumper ||
+                g.start || g.back || g.guide;
+    }
+
 
     /**
      * Calculates the distance from the robot's current position to the blue goal.
