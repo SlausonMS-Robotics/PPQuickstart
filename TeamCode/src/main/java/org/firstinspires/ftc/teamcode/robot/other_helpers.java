@@ -115,6 +115,9 @@ public class other_helpers {
         readings.clear();
     }
 
+    public void initLED(){
+
+    }
     // --- Flywheel Shooter Utilities ---
     public static class FlywheelShooter {
 
@@ -122,7 +125,7 @@ public class other_helpers {
         //
         private static final double RPM_PER_METER = 200; // The slope of the line (how much RPM to add per meter)
         private static final double MAX_RPM = 4200;
-        private static final double BASE_RPM = 3400;     // The base RPM at 0 meters (y-intercept)
+        private static final double BASE_RPM = 3000;     // The base RPM at 0 meters (y-intercept)
 
         /**
          * Get required flywheel RPM for a given shot distance (m) using a linear model.

@@ -25,24 +25,24 @@ public class Constants {
             .useSecondaryDrivePIDF(true)
             .centripetalScaling(0.0005)
             .translationalPIDFCoefficients(new PIDFCoefficients(0.012, 0, 0.0005, 0.1))
-            .headingPIDFCoefficients(new PIDFCoefficients(1, 0, 0.15, 0.1))
+            .headingPIDFCoefficients(new PIDFCoefficients(1.5, 0, 0.15, 0.1))
             .drivePIDFCoefficients(
                     new FilteredPIDFCoefficients(0.01, 0, 0.001, 0.47, 0.1)
             )
             .secondaryTranslationalPIDFCoefficients(
                     new PIDFCoefficients(0.01, 0, 0.0005, 0.1)
             )
-            .secondaryHeadingPIDFCoefficients(new PIDFCoefficients(0.5, 0, 0.15, 0))
+            .secondaryHeadingPIDFCoefficients(new PIDFCoefficients(1, 0, 0.15, 0))
             .secondaryDrivePIDFCoefficients(
                     new FilteredPIDFCoefficients(0.008, 0, 0.001, 0.45, 0.1)
             );
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             .maxPower(1)
-            .leftFrontMotorName("leftFront")
-            .leftRearMotorName("leftRear")
-            .rightFrontMotorName("rightFront")
-            .rightRearMotorName("rightRear")
+            .leftFrontMotorName("ehmotor1")
+            .leftRearMotorName("ehmotor0")
+            .rightFrontMotorName("ehmotor2")
+            .rightRearMotorName("ehmotor3")
             .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
             .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
