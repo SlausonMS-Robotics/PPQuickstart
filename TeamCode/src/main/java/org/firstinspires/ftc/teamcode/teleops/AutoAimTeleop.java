@@ -25,8 +25,8 @@ import org.firstinspires.ftc.teamcode.robot.servos;
 @TeleOp(name = "Auto Aim Teleop", group = "23609")
 public class AutoAimTeleop extends OpMode {
 
-    private static final double intakePow = 1;
-    private static final double tranferPow = 1;
+    private static final double intakePow = 1.0;
+    private static final double tranferPow = 1.0;
 
     private boolean isIntake = false;
     private boolean isTransfer = false;
@@ -38,9 +38,7 @@ public class AutoAimTeleop extends OpMode {
     private double ll_goal_dist = 0;
     private double ll_goal_heading = 0;
     private Timer targetTimer, llTimer, poseTimer, llPoseTimer, buttonDebounceTimer;
-    motors shooter = new motors();
-    motors intake = new motors();
-    motors transfer = new motors();
+    motors robotMotors = new motors(); // Single object for all motors
     limelight3A limelight = new limelight3A();
     servos Servos = new servos(); // Use the servos class
     private localizer_fusion fusion;
@@ -53,6 +51,7 @@ public class AutoAimTeleop extends OpMode {
     Follower follower;
     private boolean use_PP = true; // Enabled Pedro Pathing for fusion
     private boolean use_LL = true;
+    private boolean useFusion = false;
     private Pose startPose = new Pose(0,0,0);
 
     double curBotPoseX = 0;
@@ -71,7 +70,7 @@ public class AutoAimTeleop extends OpMode {
     @Override
     public void init() {
         // Initialize all our robot hardware
-        shooter.init(hardwareMap); //initializes all motors, not just the shooter
+        robotMotors.init(hardwareMap); //initializes all motors
         Servos.init(hardwareMap); // This now initializes the turret servo and PID
         limelight.init(hardwareMap,0, telemetry);
 
@@ -79,6 +78,8 @@ public class AutoAimTeleop extends OpMode {
             follower = Constants.createFollower(hardwareMap);
             startPose = PoseStorage.currentPose;
             follower.setStartingPose(startPose);
+            telemetry.addData("Starting Pose", startPose);
+            telemetry.update();
             fusion = new localizer_fusion(follower, limelight);
             getCurBotPose();
         }
@@ -119,7 +120,7 @@ public class AutoAimTeleop extends OpMode {
     @Override
     public void start() {
         if(use_PP) {
-            follower.startTeleopDrive(false);
+            follower.startTeleopDrive(true);
             poseTimer.resetTimer();
             llPoseTimer.resetTimer();
             
@@ -129,6 +130,21 @@ public class AutoAimTeleop extends OpMode {
     /** This is the main loop of the opmode and runs continuously after play **/
     @Override
     public void loop() {
+        telemetry.addData("trigger",gamepad2.right_trigger);
+        telemetry.update();
+        if (gamepad2.right_trigger > .2) { //transfer on/off (shoot)
+
+            robotMotors.setIntakePower(intakePow);
+            robotMotors.setTransferPower(tranferPow);
+            isIntake = true;
+            isTransfer = true;
+
+        } else {
+
+            robotMotors.setTransferPower(0);
+
+            isTransfer = false;
+        }
 
         if (buttonDebounceTimer.getElapsedTime() >= 500 && other_helpers.anyButtonPressed(gamepad2)) { //debounce all buttons
 
@@ -146,35 +162,15 @@ public class AutoAimTeleop extends OpMode {
                 turretPosAdjust -= turretPosAdjustIncrement;
             }
 
-
-
-
-
-            if (gamepad2.y) { //transfer on/off (shoot)
-                if (!isIntake || !isTransfer) {
-                    intake.setIntakePower(intakePow);
-                    transfer.setTransferPower(tranferPow);
-                    isIntake = true;
-                    isTransfer = true;
-
-                } else {
-                    intake.setIntakePower(0);
-                    transfer.setTransferPower(0);
-                    isIntake = false;
-                    isTransfer = false;
-                }
-
-            }
-
-            if (gamepad1.a) { //intake on/off
+            if (gamepad2.a || gamepad2.y) { //intake on/off
                 if (!isIntake) {
-                    intake.setIntakePower(intakePow);
-                    transfer.setTransferPower(0);
+                    robotMotors.setIntakePower(intakePow);
+                    robotMotors.setTransferPower(0);
                     isIntake = true;
                     isTransfer = false;
                 } else {
-                    intake.setIntakePower(0);
-                    transfer.setTransferPower(0);
+                    robotMotors.setIntakePower(0);
+                    robotMotors.setTransferPower(0);
                     isIntake = false;
                     isTransfer = false;
                 }
@@ -185,51 +181,50 @@ public class AutoAimTeleop extends OpMode {
 
         if(use_PP) {
             // drive code...
-            if (gamepad1.left_trigger > .1) { //driver
+            if (gamepad1.left_trigger > .2 || gamepad2.left_trigger > .2) { //driver
                 scalar = .5; //sets speed of change -> lower = slower
-                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 1), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar, 1), false);
+                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 3), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar - gamepad2.right_stick_x * scalar, 3), false);
             } else {
                 scalar = 1.0; //sets speed of change -> lower = slower
-                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 3), Math.pow(-gamepad1.left_stick_x * scalar, 3), Math.pow(-gamepad1.right_stick_x * scalar, 3), false);
+                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 3), Math.pow(-gamepad1.left_stick_x * scalar, 3), Math.pow(-gamepad1.right_stick_x * scalar - gamepad2.right_stick_x * scalar, 3), false);
             }
 
-            if (gamepad2.right_trigger > .1) { //let gamepad2 control the heading of the robot for shooting if needed
-                scalar = .5;
-                follower.setTeleOpDrive(0, 0, Math.pow(-gamepad2.left_stick_x * scalar, 1), false); //control only the heading
-            }
 
             follower.update();
-            long now = System.nanoTime();
-            fusion.pushOdomSample(now); // Push new odometry data for fusion
 
-            if (poseTimer.getElapsedTime() >= 10) { //update servo tracking based on current pose every x ms
-                getCurBotPose();
-                Servos.pointTurretToGoal(curBotPoseX, curBotPoseY, curBotPoseHead, blueGoalX, blueGoalY, turretPosAdjust);
-                if("blue".equals(myAllianceColor)){
-                    ll_goal_dist = other_helpers.distanceToBlueGoal(curBotPoseX, curBotPoseY);
-                }
-                else {
-                    ll_goal_dist = other_helpers.distanceToRedGoal(curBotPoseX, curBotPoseY);
-                }
-                double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(ll_goal_dist);
-                double speed = targetRPM * ticks_per_rev / 60;
-                shooter.setShooterVelocity(speed + shooterSpeedAdjust); // Set shooter velocity using the adjustment value from the gamepad
-                poseTimer.resetTimer();
-            }
+            if (useFusion) {
+                long now = System.nanoTime();
+                fusion.pushOdomSample(now); // Push new odometry data for fusion
 
-            if (llPoseTimer.getElapsedTime() >= 100) { // Fused pose update from Limelight
-                now = System.nanoTime();
-                fusion.updateFromLimelight(now);
-                llPoseTimer.resetTimer();
+                if (poseTimer.getElapsedTime() >= 10) { //update servo tracking based on current pose every x ms
+                    getCurBotPose();
+                    Servos.pointTurretToGoal(curBotPoseX, curBotPoseY, curBotPoseHead, blueGoalX, blueGoalY, turretPosAdjust);
+                    if ("blue".equals(myAllianceColor)) {
+                        ll_goal_dist = other_helpers.distanceToBlueGoal(curBotPoseX, curBotPoseY);
+                    } else {
+                        ll_goal_dist = other_helpers.distanceToRedGoal(curBotPoseX, curBotPoseY);
+                    }
+                    double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(ll_goal_dist);
+                    double speed = targetRPM * ticks_per_rev / 60;
+                    robotMotors.setShooterVelocity(speed + shooterSpeedAdjust); // Set shooter velocity using the adjustment value from the gamepad
+                    poseTimer.resetTimer();
+                }
+
+                if (llPoseTimer.getElapsedTime() >= 100) { // Fused pose update from Limelight
+                    now = System.nanoTime();
+                    fusion.updateFromLimelight(now);
+                    llPoseTimer.resetTimer();
+                }
             }
         }
 
-        if(llTimer.getElapsedTime() >= 100 && use_LL) {
+        if(llTimer.getElapsedTime() >= 10 && use_LL) {
             LLResult result = limelight.limelight.getLatestResult();
             llTimer.resetTimer();
 
             if (result.isValid()) {
                 target_acquired = true;
+                Servos.setLedColor(servos.LedColor.GREEN);
                 targetTimer.resetTimer();
 
                 ll_goal_heading = headingAverage.updateAndGetAverage(result.getTx());
@@ -238,7 +233,8 @@ public class AutoAimTeleop extends OpMode {
                 telemetry.addData("dist", ll_goal_dist);
                 telemetry.addData("heading", ll_goal_heading);
             } else {
-                if (targetTimer.getElapsedTime()>=2000){
+                Servos.setLedColor(servos.LedColor.RED);
+                if (targetTimer.getElapsedTime()>=500){
                     target_acquired = false;
                     targetTimer.resetTimer();
                 }
@@ -249,27 +245,23 @@ public class AutoAimTeleop extends OpMode {
                 if (ll_goal_dist > 0.1 && ll_goal_dist < 4) {
                     double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(ll_goal_dist);
                     double speed = targetRPM * ticks_per_rev / 60;
-                    shooter.setShooterVelocity(speed + shooterSpeedAdjust);
+                    robotMotors.setShooterVelocity(speed + shooterSpeedAdjust);
                     telemetry.addData("RPM", speed * 60 / ticks_per_rev);
                 }
 
                 // Adjust turret using PID
                 if (Math.abs(ll_goal_heading) > 0.01) {
-                    // The heading from limelight is in degrees. Convert to radians for the PID controller.
-                    double headingErrorRadians = Math.toRadians(ll_goal_heading);
-
-                    // Call the new method to update the turret position using the PID controller and the manual adjustment from the gamepad
-                    Servos.updateTurretWithPID(headingErrorRadians + turretPosAdjust);
-
-                    // Update scan direction for when we lose the target
-                    if(headingErrorRadians >= 0){
-                        scanCW = -1; // If error is positive (target to the right), next scan should be left
-                    } else {
-                        scanCW = 1; // If error is negative (target to the left), next scan should be right
-                    }
+                    double pidOutput = Servos.updateTurretWithPID(ll_goal_heading / 500); // Pass current heading and target (0)
+//            double pidOutput = headingPid.updatePID(ll_goal_heading, 0); // Pass current heading and target (0)
+//            double pidOutput = ll_goal_heading / 500;
 
                     telemetry.addData("position", Servos.getTurretServoPos());
-                    telemetry.addData("heading_error_rad", headingErrorRadians);
+                    telemetry.addData("pidOutput", pidOutput);
+
+
+
+                    telemetry.addData("position", Servos.getTurretServoPos());
+                    telemetry.addData("heading_error_rad", ll_goal_heading / 500);
                 }
                 telemetry.addData("Target Acquired", target_acquired);
             }

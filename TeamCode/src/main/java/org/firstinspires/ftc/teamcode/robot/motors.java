@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.robot;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -7,18 +8,35 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 public class motors {
 
-    private DcMotorEx shooterMotor1, shooterMotor0, transferMotor, intakeMotor;
+    private DcMotorEx shooterMotor1, shooterMotor0, transferMotor, intakeMotor, m0,m1,m2,m3;
 
     /**
      * Initializes the shooter motors.
      * Add other motors here as needed.
      */
     public void init(HardwareMap hardwareMap) {
+        /*
+        m0 = hardwareMap.get(DcMotorEx.class, "ehmotor0");
+        m1 = hardwareMap.get(DcMotorEx.class, "ehmotor1");
+        m2 = hardwareMap.get(DcMotorEx.class, "ehmotor2");
+        m3 = hardwareMap.get(DcMotorEx.class, "ehmotor3");
+        m0.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        m1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        m2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        m3.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+         */
+
+
         shooterMotor1 = hardwareMap.get(DcMotorEx.class, "motor1");
         shooterMotor0 = hardwareMap.get(DcMotorEx.class, "motor0");
-        shooterMotor0.setDirection(DcMotorSimple.Direction.REVERSE);
+        shooterMotor1.setDirection(DcMotorSimple.Direction.REVERSE);
         transferMotor = hardwareMap.get(DcMotorEx.class, "motor2");
         intakeMotor = hardwareMap.get(DcMotorEx.class, "motor3");
+
+        transferMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        intakeMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        intakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         shooterMotor0.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         shooterMotor1.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);

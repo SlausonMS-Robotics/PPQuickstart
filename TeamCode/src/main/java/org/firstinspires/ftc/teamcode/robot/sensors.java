@@ -15,6 +15,7 @@ public class sensors {
     private NormalizedColorSensor colorSensor;
     private AnalogInput analogServoSensor;
 
+
     /**
      * Initializes the sensors.
      */

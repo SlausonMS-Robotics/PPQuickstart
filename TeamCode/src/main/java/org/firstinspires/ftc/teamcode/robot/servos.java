@@ -8,11 +8,29 @@ public class servos {
 
     // ---- Constants ----
 
-    public static final double TURRET_MIN_POS = .3;
-    public static final double TURRET_MAX_POS = .7;
+    public static final double TURRET_MIN_POS = .4;
+    public static final double TURRET_MAX_POS = .6;
     // The physical angle limits of the turret in radians. Adjust these to match your hardware.
     public static final double TURRET_MIN_ANGLE_RAD = -Math.PI / 2.0; // -90 degrees
     public static final double TURRET_MAX_ANGLE_RAD = Math.PI / 2.0; // +90 degrees
+
+    // ---- LED Color Enum ----
+    public enum LedColor {
+        RED(0.3),
+        ORANGE(0.333),
+        YELLOW(0.388),
+        GREEN(0.50),
+        BLUE(0.611),
+        VIOLET(0.722),
+        WHITE(1.0),
+        OFF(0.0);
+
+        public final double pwmValue;
+
+        LedColor(double pwmValue) {
+            this.pwmValue = pwmValue;
+        }
+    }
 
 
     // ---- PID Constants ----
@@ -26,14 +44,16 @@ public class servos {
 
     // ---- Servos ----
     private ServoImplEx turretServo;     // servo0
-    private ServoImplEx indexerServo;  // servo1
+    private ServoImplEx statusLED;  // servo1
 
     /**
      * Initializes all servos and the PID controller for the turret.
      */
     public void init(HardwareMap hardwareMap) {
-        turretServo = hardwareMap.get(ServoImplEx.class, "servo0");
-        indexerServo = hardwareMap.get(ServoImplEx.class, "servo1");
+        turretServo = hardwareMap.get(ServoImplEx.class, "shservo0");
+
+        statusLED = hardwareMap.get(ServoImplEx.class, "shservo1");
+        //indexerServo = hardwareMap.get(ServoImplEx.class, "servo1");
 
         // Center the turret on initialization
         setTurretServoPos(0.5);
@@ -80,15 +100,17 @@ public class servos {
         }
 
         // Step 7: Pass the error to the PID updater.
-        updateTurretWithPID(turretError + manualRadAdjust); //update the current position using the PID and the manual adjustment from the gamepad
+        updateTurretWithPID(turretError); //update the current position using the PID and the manual adjustment from the gamepad
     }
 
 
     /**
      * Updates the turret position using a PID controller to minimize heading error.
+     *
      * @param headingError The error in radians between the current and target heading.
+     * @return
      */
-    public void updateTurretWithPID(double headingError) {
+    public double updateTurretWithPID(double headingError) {
         // The PID controller calculates the necessary correction.
         // The `currentState` is our heading error, and the `targetState` is 0 (no error).
         double pidCorrection = pidController.updatePID(headingError, 0);
@@ -103,6 +125,18 @@ public class servos {
 
         // Set the new position, letting the existing clipping handle the limits.
         setTurretServoPos(newPos);
+        return pidCorrection;
+    }
+
+    /**
+     * Sets the color of the goBILDA RGB LED status indicator.
+     * @param color The desired color from the LedColor enum.
+     */
+    public void setLedColor(LedColor color) {
+        if (statusLED == null || color == null) {
+            return;
+        }
+        statusLED.setPosition(color.pwmValue);
     }
 
     public void setTurretServoPos(double pos) {
@@ -130,9 +164,4 @@ public class servos {
         double angleRange = TURRET_MAX_ANGLE_RAD - TURRET_MIN_ANGLE_RAD;
         return TURRET_MIN_ANGLE_RAD + ((pos - TURRET_MIN_POS) * angleRange / servoRange);
     }
-
-    public void setIndexerServoPos(double pos) {
-        if (indexerServo != null) indexerServo.setPosition(pos);
-    }
-
 }

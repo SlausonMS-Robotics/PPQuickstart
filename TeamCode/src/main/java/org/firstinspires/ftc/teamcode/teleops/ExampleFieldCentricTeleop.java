@@ -51,9 +51,9 @@ public class ExampleFieldCentricTeleop extends OpMode {
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startPose);
-        robotservo.init(hardwareMap);
-        shooter.init(hardwareMap);
-        shooter.setShooterPIDFCoefficients(MOTOR_VELO_PID);
+        //robotservo.init(hardwareMap);
+        //shooter.init(hardwareMap);
+        //shooter.setShooterPIDFCoefficients(MOTOR_VELO_PID);
         //limelight.init(hardwareMap,5, follower, telemetry);
         myTimer = new Timer();
         llTimer = new Timer();
@@ -94,7 +94,7 @@ public class ExampleFieldCentricTeleop extends OpMode {
             scalar = 1.0;
             follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar,3), Math.pow(-gamepad1.left_stick_x * scalar,3), Math.pow(-gamepad1.right_stick_x * scalar,3), false);
         }
-
+/*
         if(gamepad1.right_trigger > .1) {
             shooter.setShooterVelocity(gamepad1.right_trigger * MAX_VELOCITY);
         }
