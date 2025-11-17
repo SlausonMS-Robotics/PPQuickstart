@@ -21,10 +21,6 @@ import org.firstinspires.ftc.teamcode.robot.servos;
 @TeleOp(name = "Auto Aim Teleop", group = "23609")
 public class AutoAimTeleop extends OpMode {
 
-    private static final double intakePow = 1.0;
-    private static final double transferPow = 1.0;
-
-    private boolean isIntake = false;
     private String myAllianceColor = "blue";
 
     private Timer llPoseTimer, buttonDebounceTimer;
@@ -94,45 +90,42 @@ public class AutoAimTeleop extends OpMode {
     /** This is the main loop of the opmode and runs continuously after play **/
     @Override
     public void loop() {
-        // Intake and transfer logic
+
         if (gamepad2.right_trigger > .2) { //transfer on/off (shoot)
-            robotMotors.setIntakePower(intakePow);
-            robotMotors.setTransferPower(transferPow);
-            isIntake = true;
+            robotMotors.shoot();
         } else {
-            robotMotors.setTransferPower(0);
+            robotMotors.stopIntakeAndTransfer();
+        }
+
+        // Manual turret control with right joystick
+        if (Math.abs(gamepad2.right_stick_x) > 0.1) {
+            Servos.moveTurretManually(gamepad2.right_stick_x);
         }
 
         // Gamepad button logic for adjustments and intake
-        if (buttonDebounceTimer.getElapsedTime() >= 500 && other_helpers.anyButtonPressed(gamepad2)) { //debounce all buttons
-            int shooterSpeedAdjustIncrement = 50;
-            if (gamepad2.right_bumper) {
-                shooterSpeedAdjust += shooterSpeedAdjustIncrement;
-            }
-            if (gamepad2.left_bumper) {
-                shooterSpeedAdjust -= shooterSpeedAdjustIncrement;
-            }
-
-            double turretPosAdjustIncrement = .008;
-            if (gamepad2.dpad_right) {
-                turretPosAdjust += turretPosAdjustIncrement;
-            }
-            if (gamepad2.dpad_left) {
-                turretPosAdjust -= turretPosAdjustIncrement;
-            }
-
-            if (gamepad2.a || gamepad2.y) { //intake on/off
-                if (!isIntake) {
-                    robotMotors.setIntakePower(intakePow);
-                    robotMotors.setTransferPower(-.05);
-                    isIntake = true;
-                } else {
-                    robotMotors.setIntakePower(.05);
-                    robotMotors.setTransferPower(0);
-                    isIntake = false;
+        if (buttonDebounceTimer.getElapsedTime() >= 250) { //debounce all buttons
+            if (other_helpers.anyButtonPressed(gamepad2)) {
+                int shooterSpeedAdjustIncrement = 50;
+                if (gamepad2.dpad_up) {
+                    shooterSpeedAdjust += shooterSpeedAdjustIncrement;
                 }
+                if (gamepad2.dpad_down) {
+                    shooterSpeedAdjust -= shooterSpeedAdjustIncrement;
+                }
+
+                double turretPosAdjustIncrement = .008;
+                if (gamepad2.dpad_right) {
+                    turretPosAdjust += turretPosAdjustIncrement;
+                }
+                if (gamepad2.dpad_left) {
+                    turretPosAdjust -= turretPosAdjustIncrement;
+                }
+
+                if (gamepad2.a || gamepad2.y) { //intake on/off
+                    robotMotors.toggleIntake();
+                }
+                buttonDebounceTimer.resetTimer();
             }
-            buttonDebounceTimer.resetTimer();
         }
 
         // Pass manual adjustments to the TurretAiming class
@@ -146,15 +139,14 @@ public class AutoAimTeleop extends OpMode {
             double scalar;
             if (gamepad1.left_trigger > .2 || gamepad2.left_trigger > .2) { //driver
                 scalar = .5; //sets speed of change -> lower = slower
-                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 3), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar - gamepad2.right_stick_x * scalar, 3), false);
+                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 3), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar - gamepad2.left_stick_x * scalar, 3), false);
             } else {
                 scalar = 1.0; //sets speed of change -> lower = slower
-                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 3), Math.pow(-gamepad1.left_stick_x * scalar, 3), Math.pow(-gamepad1.right_stick_x * scalar - gamepad2.right_stick_x * scalar, 3), false);
+                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 3), Math.pow(-gamepad1.left_stick_x * scalar, 3), Math.pow(-gamepad1.right_stick_x * scalar - gamepad2.left_stick_x * scalar, 3), false);
             }
             
             // Update odometry and sensor fusion
             follower.update();
-
 
             // Update turret aiming logic
             if (turretAimer != null) {
