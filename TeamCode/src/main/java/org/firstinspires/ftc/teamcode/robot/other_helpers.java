@@ -1,11 +1,8 @@
 package org.firstinspires.ftc.teamcode.robot;
 
-
-
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.ArrayList;
-import org.firstinspires.ftc.teamcode.robot.PoseStorage;
 
 public class other_helpers {
 
@@ -18,10 +15,6 @@ public class other_helpers {
     public static int blueGoalY = 136;
     public static int redGoalX = 132;
     public static int redGoalY = 136;
-
-    private static int goalX = 0;
-    private static int goalY = 0;
-
 
     private ElapsedTime timer = new ElapsedTime();
 
@@ -113,6 +106,13 @@ public class other_helpers {
         return sum / readings.size();
     }
 
+    public static boolean anyButtonPressed(Gamepad gamepad) {
+        return gamepad.a || gamepad.b || gamepad.x || gamepad.y ||
+                gamepad.dpad_up || gamepad.dpad_down || gamepad.dpad_left || gamepad.dpad_right ||
+                gamepad.left_bumper || gamepad.right_bumper || gamepad.start || gamepad.back;
+    }
+
+
     /**
      * Clears all readings from the moving average.
      */
@@ -120,9 +120,6 @@ public class other_helpers {
         readings.clear();
     }
 
-    public void initLED(){
-
-    }
     // --- Flywheel Shooter Utilities ---
     public static class FlywheelShooter {
 
@@ -130,7 +127,7 @@ public class other_helpers {
         //
         private static final double RPM_PER_METER = 200; // The slope of the line (how much RPM to add per meter)
         private static final double MAX_RPM = 4200;
-        private static final double BASE_RPM = 3000;     // The base RPM at 0 meters (y-intercept)
+        private static final double BASE_RPM = 3400;     // The base RPM at 0 meters (y-intercept)
 
         /**
          * Get required flywheel RPM for a given shot distance (m) using a linear model.
@@ -150,52 +147,27 @@ public class other_helpers {
         }
     }
 
-    public static boolean anyButtonPressed(Gamepad g) { //checks to see if any buttons have been pressed
-        return g.a || g.b || g.x || g.y ||
-                g.dpad_up || g.dpad_down || g.dpad_left || g.dpad_right ||
-                g.left_bumper || g.right_bumper ||
-                g.start || g.back || g.guide;
+    public static double distanceToBlueGoal(double currentX, double currentY) {
+        double deltaX = blueGoalX - currentX;
+        double deltaY = blueGoalY - currentY;
+        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     }
-
-
-    /**
-     * Calculates the distance from the robot's current position to the goal.
-     *
-     * @param currentX The robot's current X coordinate.
-     * @param currentY The robot's current Y coordinate.
-     * @return The distance to the blue goal.
-     */
-    public static double distanceToGoal(double currentX, double currentY) {
-        if (PoseStorage.allianceColor.equals("blue")) {
-            goalX = blueGoalX;
-            goalY = blueGoalY;
-        } else {
-            goalX = redGoalX;
-            goalY = redGoalY;
-        }
-        double deltaX = goalX - currentX;
-        double deltaY = goalY - currentY;
+    public static double distanceToRedGoal(double currentX, double currentY) {
+        double deltaX = redGoalX - currentX;
+        double deltaY = redGoalY - currentY;
         return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     }
 
-   /**
-     * Calculates the heading error to the goal.
-     *
-     * @param currentX The robot's current X coordinate.
-     * @param currentY The robot's current Y coordinate.
-     * @param currentHeading The robot's current heading in radians.
-     * @return The heading error in radians.
-     */
-    public static double getHeadingErrorToGoal(double currentX, double currentY, double currentHeading) {
-        if (PoseStorage.allianceColor.equals("blue")) {
-            goalX = blueGoalX;
-            goalY = blueGoalY;
-        } else {
-            goalX = redGoalX;
-            goalY = redGoalY;
-        }
+    public static double getHeadingErrorToBlueGoal(double currentX, double currentY, double currentHeading) {
+        double angleToGoal = Math.atan2(blueGoalY - currentY, blueGoalX - currentX);
+        return getNormalizedHeadingError(currentHeading, angleToGoal);
+    }
 
-        double angleToGoal = Math.atan2(goalY - currentY, goalX - currentX);
+    public static double getHeadingErrorToRedGoal(double currentX, double currentY, double currentHeading) {
+        double angleToGoal = Math.atan2(redGoalY - currentY, redGoalX - currentX);
+        return getNormalizedHeadingError(currentHeading, angleToGoal);
+    }
+    private static double getNormalizedHeadingError(double currentHeading, double angleToGoal) {
         double headingError = angleToGoal - currentHeading;
 
         // Normalize the angle to be between -PI and PI
@@ -209,6 +181,20 @@ public class other_helpers {
         return headingError;
     }
 
+    // Generic methods that select based on alliance color
+    public static double distanceToGoal(double currentX, double currentY, String allianceColor) {
+        if ("blue".equals(allianceColor)) {
+            return distanceToBlueGoal(currentX, currentY);
+        } else {
+            return distanceToRedGoal(currentX, currentY);
+        }
+    }
 
-
+    public static double getHeadingErrorToGoal(double currentX, double currentY, double currentHeading, String allianceColor) {
+        if ("blue".equals(allianceColor)) {
+            return getHeadingErrorToBlueGoal(currentX, currentY, currentHeading);
+        } else {
+            return getHeadingErrorToRedGoal(currentX, currentY, currentHeading);
+        }
+    }
 }
