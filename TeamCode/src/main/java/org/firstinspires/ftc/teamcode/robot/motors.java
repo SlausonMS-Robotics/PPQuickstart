@@ -2,148 +2,84 @@ package org.firstinspires.ftc.teamcode.robot;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 public class motors {
 
-    private DcMotorEx shooterMotor1, shooterMotor0, transferMotor, intakeMotor, m0,m1,m2,m3;
+    // ---- Constants ----
+    private static final double INTAKE_POWER = 1.0;
+    private static final double TRANSFER_POWER = 1.0;
+
+    // ---- Motor Vars ----
+    private DcMotorEx shooterMotor; // Expansion Hub port 0
+    private DcMotorEx transferMotor;  // Expansion Hub port 1
+    private DcMotorEx intakeMotor;    // Expansion Hub port 2
+
+    // ---- State ----
+    private boolean isIntakeOn = false;
 
     /**
-     * Initializes the shooter motors.
-     * Add other motors here as needed.
+     * Initializes all motors and sets their initial states.
      */
     public void init(HardwareMap hardwareMap) {
-        /*
-        m0 = hardwareMap.get(DcMotorEx.class, "ehmotor0");
-        m1 = hardwareMap.get(DcMotorEx.class, "ehmotor1");
-        m2 = hardwareMap.get(DcMotorEx.class, "ehmotor2");
-        m3 = hardwareMap.get(DcMotorEx.class, "ehmotor3");
-        m0.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        m1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        m2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        m3.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        shooterMotor = hardwareMap.get(DcMotorEx.class, "shooter");
+        shooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-         */
+        transferMotor = hardwareMap.get(DcMotorEx.class, "transfer");
+        intakeMotor = hardwareMap.get(DcMotorEx.class, "intake");
 
-
-        shooterMotor1 = hardwareMap.get(DcMotorEx.class, "motor1");
-        shooterMotor0 = hardwareMap.get(DcMotorEx.class, "motor0");
-        shooterMotor1.setDirection(DcMotorSimple.Direction.REVERSE);
-        transferMotor = hardwareMap.get(DcMotorEx.class, "motor2");
-        intakeMotor = hardwareMap.get(DcMotorEx.class, "motor3");
-
-        transferMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-        intakeMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-        intakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        shooterMotor0.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        shooterMotor1.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-    }
-
-    public void setIntakePower(double power){
-        intakeMotor.setPower(power);
-    }
-
-    public void setTransferPower(double power){
-        transferMotor.setPower(power);
-    }
-
-
-
-    public void shooterPower(double pow){
-        shooterMotor0.setPower(pow);
-        shooterMotor1.setPower(pow);
+        // Set initial power to 0
+        setShooterVelocity(0);
+        setTransferPower(0);
+        setIntakePower(0);
     }
 
     /**
-     * Sets the PIDF coefficients for the shooter motors.
-     * @param pidfCoefficients The PIDF coefficients to set.
+     * Activates the intake and transfer motors to shoot a note.
      */
-    public void setShooterPIDFCoefficients(PIDFCoefficients pidfCoefficients) {
-        if (shooterMotor0 != null) {
-            shooterMotor0.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, pidfCoefficients);
-        }
-        if (shooterMotor1 != null) {
-            shooterMotor1.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+    public void shoot() {
+        setIntakePower(INTAKE_POWER);
+        setTransferPower(TRANSFER_POWER);
+        isIntakeOn = true;
+    }
+
+    /**
+     * Toggles the intake motor on or off. Manages transfer motor for smooth pixel transition.
+     */
+    public void toggleIntake() {
+        if (!isIntakeOn) {
+            // Turn intake on
+            setIntakePower(INTAKE_POWER);
+            setTransferPower(-0.05); // Briefly reverse transfer to prevent jams
+            isIntakeOn = true;
+        } else {
+            // Turn intake off
+            setIntakePower(0.05); // Keep a slight forward power to settle pixels
+            setTransferPower(0);
+            isIntakeOn = false;
         }
     }
 
     /**
-     * Sets the shooter motors target velocity.
+     * Stops all intake and transfer motors.
      */
+    public void stopIntakeAndTransfer() {
+        setIntakePower(0);
+        setTransferPower(0);
+        isIntakeOn = false;
+    }
+
+    // --- Low-level motor control --- //
+
     public void setShooterVelocity(double velocity) {
-        if (shooterMotor0 != null) {
-            shooterMotor0.setVelocity(velocity);
-        }
-        if (shooterMotor1 != null) {
-            shooterMotor1.setVelocity(velocity);
-        }
+        if (shooterMotor != null) shooterMotor.setVelocity(velocity);
     }
 
-    /**
-     * Stops the shooter motors.
-     */
-    public void stopShooterMotors() {
-        if (shooterMotor0 != null) {
-            shooterMotor0.setPower(0);
-        }
-        if (shooterMotor1 != null) {
-            shooterMotor1.setPower(0);
-        }
+    public void setTransferPower(double power) {
+        if (transferMotor != null) transferMotor.setPower(power);
     }
 
-    /**
-     * Sets the shooter motors' target position tolerance.
-     */
-    public void setShooterMotorPosTolerance(int tolerance) {
-        if (shooterMotor0 != null) {
-            shooterMotor0.setTargetPositionTolerance(tolerance);
-        }
-        if (shooterMotor1 != null) {
-            shooterMotor1.setTargetPositionTolerance(tolerance);
-        }
-    }
-
-    /**
-     * Enables RUN_TO_POSITION mode for shooter motors.
-     */
-    public void runToPosition(int pos, double power) {
-        if (shooterMotor0 == null || shooterMotor1 == null) return;
-
-        shooterMotor0.setTargetPosition(pos);
-        shooterMotor1.setTargetPosition(pos);
-        shooterMotor0.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-        shooterMotor1.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-        shooterMotor0.setPower(power);
-        shooterMotor1.setPower(power);
-    }
-
-    /**
-     * Checks if shooter motors are still moving toward target.
-     */
-    public boolean areShooterMotorsBusy() {
-        return (shooterMotor0 != null && shooterMotor0.isBusy()) || (shooterMotor1 != null && shooterMotor1.isBusy());
-    }
-
-    /**
-     * Gets the current position of the shooter motor.
-     * This will return the position of shooterMotor0.
-     */
-    public int getShooterPosition() {
-        return shooterMotor0 != null ? shooterMotor0.getCurrentPosition() : 0;
-    }
-
-    /**
-     * Sets shooter motors to brake or float when power is zero.
-     */
-    public void setShooterZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior behavior) {
-        if (shooterMotor0 != null) {
-            shooterMotor0.setZeroPowerBehavior(behavior);
-        }
-        if (shooterMotor1 != null) {
-            shooterMotor1.setZeroPowerBehavior(behavior);
-        }
+    public void setIntakePower(double power) {
+        if (intakeMotor != null) intakeMotor.setPower(power);
     }
 }
