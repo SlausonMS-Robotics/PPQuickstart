@@ -71,7 +71,7 @@ public class Blue_12_Rear_1 extends OpMode {
     @Override
     public void loop() {
         follower.update(); // Update Pedro Pathing
-        turretAimer.update(myAllianceColor); // Update turret aim continuously
+        turretAimer.update(myAllianceColor); // Update turret aim and shooter speed continuously
         autonomousPathUpdate(); // Update autonomous state machine
 
         // Log values to Panels and Driver Station
@@ -85,8 +85,16 @@ public class Blue_12_Rear_1 extends OpMode {
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                follower.followPath(paths.Path1);
-                setPathState(1);
+                if (opmodeTimer.getElapsedTime() > 500) { //delay a little to make sure robot is ready to shoot
+                    robotMotors.shoot();
+                }
+                if(pathTimer.getElapsedTime() > 2000){
+                    robotMotors.stopTransfer();
+                    robotMotors.toggleIntake();
+                    follower.followPath(paths.Path1);
+                    setPathState(1);
+
+                }
                 break;
             case 1:
                 if (!follower.isBusy()) {
