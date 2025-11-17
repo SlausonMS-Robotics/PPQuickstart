@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.robot;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class motors {
@@ -11,9 +12,7 @@ public class motors {
     private static final double TRANSFER_POWER = 1.0;
 
     // ---- Motor Vars ----
-    private DcMotorEx shooterMotor; // Expansion Hub port 0
-    private DcMotorEx transferMotor;  // Expansion Hub port 1
-    private DcMotorEx intakeMotor;    // Expansion Hub port 2
+    private DcMotorEx shooterMotor1, shooterMotor0, transferMotor, intakeMotor, m0,m1,m2,m3;
 
     // ---- State ----
     private boolean isIntakeOn = false;
@@ -22,12 +21,18 @@ public class motors {
      * Initializes all motors and sets their initial states.
      */
     public void init(HardwareMap hardwareMap) {
-        shooterMotor = hardwareMap.get(DcMotorEx.class, "shooter");
-        shooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        shooterMotor1 = hardwareMap.get(DcMotorEx.class, "motor1");
+        shooterMotor0 = hardwareMap.get(DcMotorEx.class, "motor0");
+        shooterMotor1.setDirection(DcMotorSimple.Direction.REVERSE);
+        transferMotor = hardwareMap.get(DcMotorEx.class, "motor2");
+        intakeMotor = hardwareMap.get(DcMotorEx.class, "motor3");
 
-        transferMotor = hardwareMap.get(DcMotorEx.class, "transfer");
-        intakeMotor = hardwareMap.get(DcMotorEx.class, "intake");
+        transferMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        intakeMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        intakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        shooterMotor0.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        shooterMotor1.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         // Set initial power to 0
         setShooterVelocity(0);
         setTransferPower(0);
@@ -69,10 +74,19 @@ public class motors {
         isIntakeOn = false;
     }
 
+    public void stopTransfer(){
+        transferMotor.setPower(0);
+    }
+
     // --- Low-level motor control --- //
 
     public void setShooterVelocity(double velocity) {
-        if (shooterMotor != null) shooterMotor.setVelocity(velocity);
+        if (shooterMotor0 != null) {
+            shooterMotor0.setVelocity(velocity);
+        }
+        if (shooterMotor1 != null) {
+            shooterMotor1.setVelocity(velocity);
+        }
     }
 
     public void setTransferPower(double power) {
