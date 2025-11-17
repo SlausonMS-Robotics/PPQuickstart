@@ -5,6 +5,7 @@ package org.firstinspires.ftc.teamcode.robot;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.ArrayList;
+import org.firstinspires.ftc.teamcode.robot.PoseStorage;
 
 public class other_helpers {
 
@@ -17,6 +18,10 @@ public class other_helpers {
     public static int blueGoalY = 136;
     public static int redGoalX = 132;
     public static int redGoalY = 136;
+
+    private static int goalX = 0;
+    private static int goalY = 0;
+
 
     private ElapsedTime timer = new ElapsedTime();
 
@@ -154,41 +159,43 @@ public class other_helpers {
 
 
     /**
-     * Calculates the distance from the robot's current position to the blue goal.
+     * Calculates the distance from the robot's current position to the goal.
      *
      * @param currentX The robot's current X coordinate.
      * @param currentY The robot's current Y coordinate.
      * @return The distance to the blue goal.
      */
-    public static double distanceToBlueGoal(double currentX, double currentY) {
-        double deltaX = blueGoalX - currentX;
-        double deltaY = blueGoalY - currentY;
+    public static double distanceToGoal(double currentX, double currentY) {
+        if (PoseStorage.allianceColor.equals("blue")) {
+            goalX = blueGoalX;
+            goalY = blueGoalY;
+        } else {
+            goalX = redGoalX;
+            goalY = redGoalY;
+        }
+        double deltaX = goalX - currentX;
+        double deltaY = goalY - currentY;
         return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     }
 
-    /**
-     * Calculates the distance from the robot's current position to the red goal.
-     *
-     * @param currentX The robot's current X coordinate.
-     * @param currentY The robot's current Y coordinate.
-     * @return The distance to the red goal.
-     */
-    public static double distanceToRedGoal(double currentX, double currentY) {
-        double deltaX = redGoalX - currentX;
-        double deltaY = redGoalY - currentY;
-        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    }
-
-    /**
-     * Calculates the heading error to the blue goal.
+   /**
+     * Calculates the heading error to the goal.
      *
      * @param currentX The robot's current X coordinate.
      * @param currentY The robot's current Y coordinate.
      * @param currentHeading The robot's current heading in radians.
      * @return The heading error in radians.
      */
-    public static double getHeadingErrorToBlueGoal(double currentX, double currentY, double currentHeading) {
-        double angleToGoal = Math.atan2(blueGoalY - currentY, blueGoalX - currentX);
+    public static double getHeadingErrorToGoal(double currentX, double currentY, double currentHeading) {
+        if (PoseStorage.allianceColor.equals("blue")) {
+            goalX = blueGoalX;
+            goalY = blueGoalY;
+        } else {
+            goalX = redGoalX;
+            goalY = redGoalY;
+        }
+
+        double angleToGoal = Math.atan2(goalY - currentY, goalX - currentX);
         double headingError = angleToGoal - currentHeading;
 
         // Normalize the angle to be between -PI and PI
@@ -202,27 +209,6 @@ public class other_helpers {
         return headingError;
     }
 
-    /**
-     * Calculates the heading error to the red goal.
-     *
-     * @param currentX The robot's current X coordinate.
-     * @param currentY The robot's current Y coordinate.
-     * @param currentHeading The robot's current heading in radians.
-     * @return The heading error in radians.
-     */
-    public static double getHeadingErrorToRedGoal(double currentX, double currentY, double currentHeading) {
-        double angleToGoal = Math.atan2(redGoalY - currentY, redGoalX - currentX);
-        double headingError = angleToGoal - currentHeading;
 
-        // Normalize the angle to be between -PI and PI
-        while (headingError <= -Math.PI) {
-            headingError += 2 * Math.PI;
-        }
-        while (headingError > Math.PI) {
-            headingError -= 2 * Math.PI;
-        }
-
-        return headingError;
-    }
 
 }
