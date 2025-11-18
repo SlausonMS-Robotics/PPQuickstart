@@ -159,23 +159,23 @@ public class other_helpers {
     }
 
     public static double getHeadingErrorToBlueGoal(double currentX, double currentY, double currentHeading) {
-        double angleToGoal = Math.atan2(blueGoalY - currentY, blueGoalX - currentX);
+        double angleToGoal = Math.toDegrees(Math.atan2(blueGoalY - currentY, blueGoalX - currentX));
         return getNormalizedHeadingError(currentHeading, angleToGoal);
     }
 
     public static double getHeadingErrorToRedGoal(double currentX, double currentY, double currentHeading) {
-        double angleToGoal = Math.atan2(redGoalY - currentY, redGoalX - currentX);
+        double angleToGoal = Math.toDegrees(Math.atan2(redGoalY - currentY, redGoalX - currentX));
         return getNormalizedHeadingError(currentHeading, angleToGoal);
     }
     private static double getNormalizedHeadingError(double currentHeading, double angleToGoal) {
         double headingError = angleToGoal - currentHeading;
 
-        // Normalize the angle to be between -PI and PI
-        while (headingError <= -Math.PI) {
-            headingError += 2 * Math.PI;
+        // Normalize the angle to be between -180 and 180
+        while (headingError <= -180) {
+            headingError += 360;
         }
-        while (headingError > Math.PI) {
-            headingError -= 2 * Math.PI;
+        while (headingError > 180) {
+            headingError -= 360;
         }
 
         return headingError;
@@ -184,9 +184,9 @@ public class other_helpers {
     // Generic methods that select based on alliance color
     public static double distanceToGoal(double currentX, double currentY, String allianceColor) {
         if ("blue".equals(allianceColor)) {
-            return distanceToBlueGoal(currentX, currentY);
+            return distanceToBlueGoal(currentX, currentY) * .0254;
         } else {
-            return distanceToRedGoal(currentX, currentY);
+            return distanceToRedGoal(currentX, currentY) * .0254;
         }
     }
 

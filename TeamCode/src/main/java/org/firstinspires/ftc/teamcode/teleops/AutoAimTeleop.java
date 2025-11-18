@@ -91,6 +91,15 @@ public class AutoAimTeleop extends OpMode {
     @Override
     public void loop() {
 
+        // Update turret aiming logic
+        if (turretAimer != null) {
+            turretAimer.update(myAllianceColor);
+
+        }
+        else{
+            telemetry.addData("Turret Aimer NUll", 0);
+        }
+
         if (gamepad2.right_trigger > .2) { //transfer on/off (shoot)
             robotMotors.shoot();
         } else {
@@ -103,7 +112,7 @@ public class AutoAimTeleop extends OpMode {
         }
 
         // Gamepad button logic for adjustments and intake
-        if (buttonDebounceTimer.getElapsedTime() >= 250) { //debounce all buttons
+        if (buttonDebounceTimer.getElapsedTime() >= 400) { //debounce all buttons
             if (other_helpers.anyButtonPressed(gamepad2)) {
                 int shooterSpeedAdjustIncrement = 50;
                 if (gamepad2.dpad_up) {
@@ -113,7 +122,7 @@ public class AutoAimTeleop extends OpMode {
                     shooterSpeedAdjust -= shooterSpeedAdjustIncrement;
                 }
 
-                double turretPosAdjustIncrement = .008;
+                double turretPosAdjustIncrement = .5;
                 if (gamepad2.dpad_right) {
                     turretPosAdjust += turretPosAdjustIncrement;
                 }
@@ -148,10 +157,7 @@ public class AutoAimTeleop extends OpMode {
             // Update odometry and sensor fusion
             follower.update();
 
-            // Update turret aiming logic
-            if (turretAimer != null) {
-                turretAimer.update(myAllianceColor);
-            }
+
         }
     }
 

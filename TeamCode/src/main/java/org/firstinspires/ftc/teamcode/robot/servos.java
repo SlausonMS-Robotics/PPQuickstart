@@ -15,9 +15,9 @@ public class servos {
 
     // ---- PID Constants ----
     // NOTE: These will need to be tuned for your specific robot
-    public static final double TURRET_P = 0.5;
+    public static final double TURRET_P = 0.015;
     public static final double TURRET_I = 0.0;
-    public static final double TURRET_D = 0.0;
+    public static final double TURRET_D = 0.005;
 
     // ---- PID Controller ----
     private other_helpers pidController = new other_helpers();
@@ -27,15 +27,29 @@ public class servos {
     private ServoImplEx indexerServo;  // servo1
     private ServoImplEx ledServo;      // servo2 for LED control
 
-    public enum LedColor { GREEN, RED, OFF }
+    // ---- LED Color Enum ----
+    public enum LedColor {
+        RED(0.3),
+        ORANGE(0.333),
+        YELLOW(0.388),
+        GREEN(0.50),
+        BLUE(0.611),
+        VIOLET(0.722),
+        WHITE(1.0),
+        OFF(0.0);
 
+        public final double pwmValue;
+
+        LedColor(double pwmValue) {
+            this.pwmValue = pwmValue;
+        }
+    }
     /**
      * Initializes all servos and the PID controller for the turret.
      */
     public void init(HardwareMap hardwareMap) {
-        turretServo = hardwareMap.get(ServoImplEx.class, "servo0");
-        indexerServo = hardwareMap.get(ServoImplEx.class, "servo1");
-        ledServo = hardwareMap.get(ServoImplEx.class, "led");
+        turretServo = hardwareMap.get(ServoImplEx.class, "shservo1");
+        ledServo = hardwareMap.get(ServoImplEx.class, "shservo0");
         ledServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
 
         // Center the turret on initialization
@@ -45,20 +59,7 @@ public class servos {
         pidController.initPID(TURRET_P, TURRET_I, TURRET_D);
     }
 
-    public void setLedColor(LedColor color) {
-        switch (color) {
-            case GREEN:
-                ledServo.setPosition(1.0);
-                break;
-            case RED:
-                ledServo.setPosition(0.0);
-                break;
-            case OFF:
-            default:
-                ledServo.setPosition(0.5);
-                break;
-        }
-    }
+
 
     /**
      * Manually moves the turret based on a power value.
@@ -92,6 +93,17 @@ public class servos {
             return turretServo.getPosition();
         }
         return 0.5; // Default to center
+    }
+
+    /**
+     * Sets the color of the goBILDA RGB LED status indicator.
+     * @param color The desired color from the LedColor enum.
+     */
+    public static void setLedColor(LedColor color) {
+        if (ledServo == null || color == null) {
+            return;
+        }
+        ledServo.setPosition(color.pwmValue);
     }
 
     public void setIndexerServoPos(double pos) {

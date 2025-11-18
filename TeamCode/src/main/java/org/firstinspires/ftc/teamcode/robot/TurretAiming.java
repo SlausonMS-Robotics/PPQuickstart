@@ -20,6 +20,8 @@ public class TurretAiming {
     private final Timer targetTimer = new Timer();
     private final Timer llTimer = new Timer();
 
+
+
     private boolean target_acquired = false;
     private double llGoalDist = 0;
     private double llGoalHeadingError = 0;
@@ -35,6 +37,9 @@ public class TurretAiming {
         this.robotMotors = robotMotors;
         this.telemetry = telemetry;
 
+        llTimer.resetTimer();
+        targetTimer.resetTimer();
+
         headingAverage.initMovingAverage(3);
         distanceAverage.initMovingAverage(3);
     }
@@ -46,14 +51,14 @@ public class TurretAiming {
 
             if (result.isValid()) {
                 target_acquired = true;
-                Servos.setLedColor(servos.LedColor.GREEN);
+                servos.setLedColor(servos.LedColor.GREEN);
                 targetTimer.resetTimer();
 
-                llGoalHeadingError = headingAverage.updateAndGetAverage(result.getTx());
-                llGoalDist = distanceAverage.updateAndGetAverage(result.getBotposeAvgDist());
+                llGoalHeadingError = result.getTx(); // took out averaging -> headingAverage.updateAndGetAverage(result.getTx());
+                llGoalDist = result.getBotposeAvgDist(); // took out averaging -> distanceAverage.updateAndGetAverage(result.getBotposeAvgDist());
 
             } else {
-                Servos.setLedColor(servos.LedColor.RED);
+                servos.setLedColor(servos.LedColor.RED);
                 if (targetTimer.getElapsedTime() >= 1000) {
                     target_acquired = false;
                     targetTimer.resetTimer();
@@ -78,7 +83,7 @@ public class TurretAiming {
             }
 
             // Adjust turret using PID
-            if (Math.abs(goalHeadingError) > 0.0) {
+            if (Math.abs(goalHeadingError) > 0.1) {
                 Servos.updateTurretWithPID(goalHeadingError + turretPosAdjust);
             }
 
