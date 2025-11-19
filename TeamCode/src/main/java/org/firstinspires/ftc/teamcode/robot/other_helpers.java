@@ -16,6 +16,10 @@ public class other_helpers {
     public static int redGoalX = 132;
     public static int redGoalY = 136;
 
+    public static final double MAX_RPM = 5000;
+
+    public static final double MIN_RPM = 2000;
+
     private ElapsedTime timer = new ElapsedTime();
 
     // ---- Moving Average variables ----
@@ -126,8 +130,10 @@ public class other_helpers {
         // --- Linear Model Constants ---
         //
         private static final double RPM_PER_METER = 200; // The slope of the line (how much RPM to add per meter)
-        private static final double MAX_RPM = 4200;
-        private static final double BASE_RPM = 3400;     // The base RPM at 0 meters (y-intercept)
+        private static final double FAR_MAX_RPM = 4200;
+
+
+        private static final double BASE_RPM = 3000;     // The base RPM at min distance
 
         /**
          * Get required flywheel RPM for a given shot distance (m) using a linear model.
@@ -135,14 +141,14 @@ public class other_helpers {
          * it can be tuned to account for real-world factors like air resistance and energy loss.
          */
         public static double getRPMForDistance(double rangeMeters) {
-            if (rangeMeters <= 2) return BASE_RPM;
-            if (rangeMeters >= 3) return MAX_RPM;
+            if (rangeMeters <= 1) return BASE_RPM;
+            if (rangeMeters >= 3) return FAR_MAX_RPM;
             return BASE_RPM + (rangeMeters * RPM_PER_METER);
         }
 
         /** Predict horizontal range (m) for a given flywheel RPM. */
         public static double getDistanceForRPM(double rpm) {
-            if (rpm <= BASE_RPM) return 0;
+            //if (rpm <= BASE_RPM) return 0;
             return (rpm - BASE_RPM) / RPM_PER_METER;
         }
     }

@@ -16,6 +16,13 @@ public class motors {
 
     // ---- State ----
     private boolean isIntakeOn = false;
+    private boolean isTransferOn = false;
+
+    // ---- Constructor ----
+    public motors() {
+
+    }
+
 
     /**
      * Initializes all motors and sets their initial states.
@@ -39,6 +46,15 @@ public class motors {
         setIntakePower(0);
     }
 
+    public boolean isIntakeOn() {
+        return this.isIntakeOn;
+    }
+
+    public boolean isTransferOn() {
+        return this.isTransferOn;
+    }
+
+
     /**
      * Activates the intake and transfer motors to shoot a note.
      */
@@ -46,6 +62,32 @@ public class motors {
         setIntakePower(INTAKE_POWER);
         setTransferPower(TRANSFER_POWER);
         isIntakeOn = true;
+        isTransferOn = true;
+
+    }
+
+    public boolean setIntake(boolean on){
+        if(on){
+            setIntakePower(INTAKE_POWER);
+            isIntakeOn = true;
+            return true;
+        }else{
+            setIntakePower(0);
+            isIntakeOn = false;
+            return false;
+        }
+    }
+
+    public boolean setTransfer(boolean on){
+        if(on){
+            setTransferPower(TRANSFER_POWER);
+            isTransferOn = true;
+            return true;
+        }else{
+            setTransferPower(0);
+            isTransferOn = false;
+            return false;
+        }
     }
 
     /**
@@ -55,13 +97,15 @@ public class motors {
         if (!isIntakeOn) {
             // Turn intake on
             setIntakePower(INTAKE_POWER);
-            setTransferPower(-0.05); // Briefly reverse transfer to prevent jams
+            setTransferPower(-0.1);
             isIntakeOn = true;
+            isTransferOn = false;
         } else {
             // Turn intake off
-            setIntakePower(0.05); // Keep a slight forward power to settle pixels
+            setIntakePower(0.0); // Keep a slight forward power to settle pixels
             setTransferPower(0);
             isIntakeOn = false;
+            isTransferOn = false;
         }
     }
 
@@ -96,4 +140,6 @@ public class motors {
     public void setIntakePower(double power) {
         if (intakeMotor != null) intakeMotor.setPower(power);
     }
+
+
 }
