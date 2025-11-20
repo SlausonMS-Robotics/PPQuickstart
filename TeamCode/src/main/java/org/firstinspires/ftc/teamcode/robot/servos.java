@@ -63,11 +63,11 @@ public class servos {
 
     /**
      * Manually moves the turret based on a power value.
-     * @param power The desired power, from -1.0 (left) to 1.0 (right).
+     * @param increment the distance to move the turret in one call of the method.
      */
-    public void moveTurretManually(double power) {
+    public void moveTurretManually(double increment) {
         double currentPos = getTurretServoPos();
-        double newPos = currentPos + (power * MANUAL_TURRET_SPEED);
+        double newPos = currentPos + increment;
         setTurretServoPos(newPos);
     }
 

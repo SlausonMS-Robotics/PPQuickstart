@@ -31,7 +31,6 @@ public class AutoAimTeleop extends OpMode {
 
 
     Follower follower;
-    private final boolean usePP = true; // Enabled Pedro Pathing
 
     private int shooterSpeedAdjust = 0;
     private double turretPosAdjust = 0;
@@ -44,15 +43,14 @@ public class AutoAimTeleop extends OpMode {
         Servos.init(hardwareMap); // This now initializes the turret servo and PID
         limelight.init(hardwareMap,0, telemetry);
 
-        if (usePP) {
-            follower = Constants.createFollower(hardwareMap);
-            Pose startPose = PoseStorage.currentPose;
-            follower.setStartingPose(startPose);
-            telemetry.addData("Starting Pose", startPose);
+        follower = Constants.createFollower(hardwareMap);
+        Pose startPose = PoseStorage.currentPose;
+        follower.setStartingPose(startPose);
+        telemetry.addData("Starting Pose", startPose);
 
-            // Instantiate our new reusable classes
-            turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
-        }
+        // Instantiate our new reusable classes
+        turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
+
 
         llPoseTimer = new Timer();
         buttonDebounceTimer = new Timer();
@@ -81,38 +79,33 @@ public class AutoAimTeleop extends OpMode {
     /** This method is called once at the start of the OpMode. **/
     @Override
     public void start() {
-        if(usePP) {
+
             follower.startTeleopDrive(true);
             llPoseTimer.resetTimer();
-        }
+
     }
 
     /** This is the main loop of the opmode and runs continuously after play **/
     @Override
     public void loop() {
 
-        // Update turret aiming logic
-        if (turretAimer != null) {
-            turretAimer.update(myAllianceColor);
-
-        }
-        else{
-            telemetry.addData("Turret Aimer NUll", 0);
-        }
-
         if (gamepad2.right_trigger > .2) { //transfer on/off (shoot)
             robotMotors.shoot();
         } else {
-            robotMotors.stopIntakeAndTransfer();
+            robotMotors.setTransfer(false); //turn transfer off
         }
 
         // Manual turret control with right joystick
         if (Math.abs(gamepad2.right_stick_x) > 0.1) {
-            Servos.moveTurretManually(gamepad2.right_stick_x);
+            Servos.moveTurretManually(gamepad2.right_stick_x / 100);
+            turretAimer.setManualTurret(true);
+        }
+        else {
+            turretAimer.setManualTurret(false);
         }
 
         // Gamepad button logic for adjustments and intake
-        if (buttonDebounceTimer.getElapsedTime() >= 400) { //debounce all buttons
+        if (buttonDebounceTimer.getElapsedTime() >= 250) { //debounce all buttons
             if (other_helpers.anyButtonPressed(gamepad2)) {
                 int shooterSpeedAdjustIncrement = 50;
                 if (gamepad2.dpad_up) {
@@ -122,7 +115,7 @@ public class AutoAimTeleop extends OpMode {
                     shooterSpeedAdjust -= shooterSpeedAdjustIncrement;
                 }
 
-                double turretPosAdjustIncrement = .5;
+                double turretPosAdjustIncrement = .008;
                 if (gamepad2.dpad_right) {
                     turretPosAdjust += turretPosAdjustIncrement;
                 }
@@ -131,7 +124,7 @@ public class AutoAimTeleop extends OpMode {
                 }
 
                 if (gamepad2.a || gamepad2.y) { //intake on/off
-                    robotMotors.toggleIntake();
+                    robotMotors.setIntake(!robotMotors.isIntakeOn()); //toggle intake
                 }
                 buttonDebounceTimer.resetTimer();
             }
@@ -143,22 +136,27 @@ public class AutoAimTeleop extends OpMode {
             turretAimer.setTurretPosAdjust(turretPosAdjust);
         }
 
-        if (usePP) {
+
             // Drive code
             double scalar;
             if (gamepad1.left_trigger > .2 || gamepad2.left_trigger > .2) { //driver
                 scalar = .5; //sets speed of change -> lower = slower
-                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 3), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar - gamepad2.left_stick_x * scalar, 3), false);
+                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 1), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar, 1), false);
             } else {
                 scalar = 1.0; //sets speed of change -> lower = slower
-                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 3), Math.pow(-gamepad1.left_stick_x * scalar, 3), Math.pow(-gamepad1.right_stick_x * scalar - gamepad2.left_stick_x * scalar, 3), false);
+                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 1), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar, 1), false);
             }
             
             // Update odometry and sensor fusion
             follower.update();
 
+            // Update turret aiming logic
+            if (turretAimer != null){
+                if (!turretAimer.isManualTurret()) {
+                    turretAimer.update(myAllianceColor);
+                }
+            }
 
-        }
     }
 
     /** We do not use this because everything automatically should disable **/

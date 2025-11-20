@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.robot;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.util.Timer;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -14,13 +15,13 @@ public class TurretAiming {
     private final motors robotMotors;
     private final Telemetry telemetry;
 
+    private final other_helpers helpers = new other_helpers();
+
     private final other_helpers headingAverage = new other_helpers();
     private final other_helpers distanceAverage = new other_helpers();
 
     private final Timer targetTimer = new Timer();
     private final Timer llTimer = new Timer();
-
-
 
     private boolean target_acquired = false;
     private double llGoalDist = 0;
@@ -29,6 +30,7 @@ public class TurretAiming {
     private int shooterSpeedAdjust = 0;
     private double turretPosAdjust = 0;
     private static final int ticks_per_rev = 28;
+    private boolean isManualTurret = false;
 
     public TurretAiming(Follower follower, limelight3A limelight, servos Servos, motors robotMotors, Telemetry telemetry) {
         this.follower = follower;
@@ -37,12 +39,19 @@ public class TurretAiming {
         this.robotMotors = robotMotors;
         this.telemetry = telemetry;
 
-        llTimer.resetTimer();
-        targetTimer.resetTimer();
-
         headingAverage.initMovingAverage(3);
         distanceAverage.initMovingAverage(3);
     }
+
+    public boolean isManualTurret() {
+        return this.isManualTurret;
+    }
+
+    public void setManualTurret(boolean isManualTurret) {
+        this.isManualTurret = isManualTurret;
+    }
+
+
 
     public void update(String myAllianceColor) {
         if (llTimer.getElapsedTime() >= 10) {
@@ -51,15 +60,15 @@ public class TurretAiming {
 
             if (result.isValid()) {
                 target_acquired = true;
-                servos.setLedColor(servos.LedColor.GREEN);
+                Servos.setLedColor(servos.LedColor.GREEN);
                 targetTimer.resetTimer();
 
-                llGoalHeadingError = result.getTx(); // took out averaging -> headingAverage.updateAndGetAverage(result.getTx());
-                llGoalDist = result.getBotposeAvgDist(); // took out averaging -> distanceAverage.updateAndGetAverage(result.getBotposeAvgDist());
+                llGoalHeadingError = headingAverage.updateAndGetAverage(result.getTx());
+                llGoalDist = distanceAverage.updateAndGetAverage(result.getBotposeAvgDist());
 
             } else {
-                servos.setLedColor(servos.LedColor.RED);
-                if (targetTimer.getElapsedTime() >= 1000) {
+                Servos.setLedColor(servos.LedColor.RED);
+                if (targetTimer.getElapsedTime() >= 500) {
                     target_acquired = false;
                     targetTimer.resetTimer();
                 }
@@ -76,14 +85,14 @@ public class TurretAiming {
             }
 
             // Set shooter velocity
-            if (goalDistance > 0 && goalDistance < 5) {
+            if (goalDistance > .1 && goalDistance < 5) {
                 double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(goalDistance);
-                speed = targetRPM * ticks_per_rev / 60;
-                robotMotors.setShooterVelocity(speed + shooterSpeedAdjust);
+                speed = Range.clip((targetRPM + shooterSpeedAdjust) * ticks_per_rev / 60, helpers.MIN_RPM, helpers.MAX_RPM);
+                robotMotors.setShooterVelocity(speed);
             }
 
             // Adjust turret using PID
-            if (Math.abs(goalHeadingError) > 0.1) {
+            if (Math.abs(goalHeadingError) > 0.0) {
                 Servos.updateTurretWithPID(goalHeadingError + turretPosAdjust);
             }
 
