@@ -29,6 +29,7 @@ public class TurretAiming {
     private double speed = 0;
     private int shooterSpeedAdjust = 0;
     private double turretPosAdjust = 0;
+    private static double FAR_LAUNCH_DIST= 3.2;
     private static final int ticks_per_rev = 28;
     private boolean isManualTurret = false;
 
@@ -41,6 +42,7 @@ public class TurretAiming {
 
         headingAverage.initMovingAverage(3);
         distanceAverage.initMovingAverage(3);
+        //llGoalDist = FAR_LAUNCH_DIST;
     }
 
     public boolean isManualTurret() {
@@ -80,8 +82,10 @@ public class TurretAiming {
                 goalDistance = llGoalDist;
                 goalHeadingError = llGoalHeadingError;
             } else {
-                goalDistance = other_helpers.distanceToGoal(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
-                goalHeadingError = other_helpers.getHeadingErrorToGoal(follower.getPose().getX(), follower.getPose().getY(), follower.getPose().getHeading(), myAllianceColor);
+                goalDistance = llGoalDist;
+                goalHeadingError = llGoalHeadingError;
+                //goalDistance = other_helpers.distanceToGoal(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
+                //goalHeadingError = other_helpers.getHeadingErrorToGoal(follower.getPose().getX(), follower.getPose().getY(), follower.getPose().getHeading(), myAllianceColor);
             }
 
             // Set shooter velocity

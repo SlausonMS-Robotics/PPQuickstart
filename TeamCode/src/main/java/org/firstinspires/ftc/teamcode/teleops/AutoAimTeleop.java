@@ -12,6 +12,7 @@ import org.firstinspires.ftc.teamcode.robot.TurretAiming;
 import org.firstinspires.ftc.teamcode.robot.limelight3A;
 import org.firstinspires.ftc.teamcode.robot.motors;
 import org.firstinspires.ftc.teamcode.robot.other_helpers;
+import org.firstinspires.ftc.teamcode.robot.sensors;
 import org.firstinspires.ftc.teamcode.robot.servos;
 
 /**
@@ -27,6 +28,7 @@ public class AutoAimTeleop extends OpMode {
     motors robotMotors = new motors(); // Single object for all motors
     limelight3A limelight = new limelight3A();
     servos Servos = new servos();
+    sensors mySensors = new sensors();
     private TurretAiming turretAimer;
 
 
@@ -42,6 +44,8 @@ public class AutoAimTeleop extends OpMode {
         robotMotors.init(hardwareMap); //initializes all motors
         Servos.init(hardwareMap); // This now initializes the turret servo and PID
         limelight.init(hardwareMap,0, telemetry);
+        mySensors.init(hardwareMap);
+
 
         follower = Constants.createFollower(hardwareMap);
         Pose startPose = PoseStorage.currentPose;
@@ -88,11 +92,22 @@ public class AutoAimTeleop extends OpMode {
     /** This is the main loop of the opmode and runs continuously after play **/
     @Override
     public void loop() {
+        if (mySensors.artifactSeen()){
+            robotMotors.setIntake(false);
+        }
+        telemetry.addData("transfer current", robotMotors.getMotorCurrent(robotMotors.getTransferMotor()));
+        telemetry.addData("intake current", robotMotors.getMotorCurrent(robotMotors.getIntakeMotor()));
+        telemetry.addData("shooter0 current", robotMotors.getMotorCurrent(robotMotors.getShooterMotor0()));
+        telemetry.addData("shooter1 current", robotMotors.getMotorCurrent(robotMotors.getShooterMotor1()));
+        telemetry.addData("artifact dist", mySensors.getTransferDist());
 
         if (gamepad2.right_trigger > .2) { //transfer on/off (shoot)
             robotMotors.shoot();
         } else {
-            robotMotors.setTransfer(false); //turn transfer off
+            if(robotMotors.isIntakeOn()) {
+                robotMotors.transferBackwards(); //turn transfer off
+            }
+            else robotMotors.setTransfer(false);
         }
 
         // Manual turret control with right joystick
@@ -124,7 +139,7 @@ public class AutoAimTeleop extends OpMode {
                 }
 
                 if (gamepad2.a || gamepad2.y) { //intake on/off
-                    robotMotors.setIntake(!robotMotors.isIntakeOn()); //toggle intake
+                    robotMotors.toggleIntake(); //toggle intake
                 }
                 buttonDebounceTimer.resetTimer();
             }

@@ -1,28 +1,23 @@
 package org.firstinspires.ftc.teamcode.robot;
 
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+
 public class motors {
 
     // ---- Constants ----
-    private static final double INTAKE_POWER = -1.0;
+    private static final double INTAKE_POWER = 1.0;
     private static final double TRANSFER_POWER = 1.0;
 
     // ---- Motor Vars ----
-    private DcMotorEx shooterMotor1, shooterMotor0, transferMotor, intakeMotor, m0,m1,m2,m3;
+    private DcMotorEx shooterMotor1, shooterMotor0, transferMotor, intakeMotor;
 
     // ---- State ----
     private boolean isIntakeOn = false;
     private boolean isTransferOn = false;
-
-    // ---- Constructor ----
-    public motors() {
-
-    }
-
 
     /**
      * Initializes all motors and sets their initial states.
@@ -46,12 +41,29 @@ public class motors {
         setIntakePower(0);
     }
 
+    // ---- Public Getters for State and Motors ----
     public boolean isIntakeOn() {
         return this.isIntakeOn;
     }
 
     public boolean isTransferOn() {
         return this.isTransferOn;
+    }
+
+    public DcMotorEx getShooterMotor1() { return shooterMotor1; }
+    public DcMotorEx getShooterMotor0() { return shooterMotor0; }
+    public DcMotorEx getTransferMotor() { return transferMotor; }
+    public DcMotorEx getIntakeMotor() { return intakeMotor; }
+
+
+    /**
+     * Gets the current draw of a specific motor in Amps.
+     * @param motor The DcMotorEx object to measure.
+     * @return The current in Amps.
+     */
+    public double getMotorCurrent(DcMotorEx motor){
+        if (motor == null) return 0;
+        return motor.getCurrent(CurrentUnit.AMPS);
     }
 
 
@@ -78,6 +90,10 @@ public class motors {
         }
     }
 
+    public void transferBackwards(){
+        setTransferPower(-0.17);
+    }
+
     public boolean setTransfer(boolean on){
         if(on){
             setTransferPower(TRANSFER_POWER);
@@ -97,7 +113,7 @@ public class motors {
         if (!isIntakeOn) {
             // Turn intake on
             setIntakePower(INTAKE_POWER);
-            setTransferPower(-1.0);
+            transferBackwards();
             isIntakeOn = true;
             isTransferOn = false;
         } else {
