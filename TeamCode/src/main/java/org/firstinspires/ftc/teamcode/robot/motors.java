@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 public class motors {
 
     // ---- Constants ----
-    private static final double INTAKE_POWER = 1.0;
+    private static final double INTAKE_POWER = -1.0;
     private static final double TRANSFER_POWER = 1.0;
 
     // ---- Motor Vars ----
@@ -56,7 +56,7 @@ public class motors {
 
 
     /**
-     * Activates the intake and transfer motors to shoot a note.
+     * Activates the intake and transfer motors to shootAction a note.
      */
     public void shoot() {
         setIntakePower(INTAKE_POWER);
@@ -97,7 +97,7 @@ public class motors {
         if (!isIntakeOn) {
             // Turn intake on
             setIntakePower(INTAKE_POWER);
-            setTransferPower(-0.1);
+            setTransferPower(-1.0);
             isIntakeOn = true;
             isTransferOn = false;
         } else {
@@ -134,7 +134,9 @@ public class motors {
     }
 
     public void setTransferPower(double power) {
-        if (transferMotor != null) transferMotor.setPower(power);
+        if (transferMotor != null) {
+            transferMotor.setPower(power);
+        }
     }
 
     public void setIntakePower(double power) {
