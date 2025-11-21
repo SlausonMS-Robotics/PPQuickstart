@@ -9,13 +9,13 @@ public class servos {
 
     // ---- Constants ----
 
-    public static final double TURRET_MIN_POS = .3;
-    public static final double TURRET_MAX_POS = .7;
+    public static final double TURRET_MIN_POS = .2;
+    public static final double TURRET_MAX_POS = .8;
     public static final double MANUAL_TURRET_SPEED = 0.005; // Adjust this for manual control sensitivity
 
     // ---- PID Constants ----
     // NOTE: These will need to be tuned for your specific robot
-    public static final double TURRET_P = 0.05;
+    public static final double TURRET_P = 0.07;
     public static final double TURRET_I = 0.0;
     public static final double TURRET_D = 0.015;
 
@@ -23,7 +23,7 @@ public class servos {
     private other_helpers pidController = new other_helpers();
 
     // ---- Servos ----
-    private ServoImplEx turretServo;     // servo0
+    private ServoImplEx turretServo, intakeServo1, intakeServo2;     // servo0
     private ServoImplEx indexerServo;  // servo1
     private static ServoImplEx ledServo;      // servo2 for LED control
 
@@ -51,6 +51,10 @@ public class servos {
         turretServo = hardwareMap.get(ServoImplEx.class, "shservo0");
         ledServo = hardwareMap.get(ServoImplEx.class, "shservo1");
         ledServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
+        intakeServo1 = hardwareMap.get(ServoImplEx.class, "shservo3");
+        intakeServo2 = hardwareMap.get(ServoImplEx.class, "shservo4");
+
+
 
         // Center the turret on initialization
         //setTurretServoPos(0.5);
@@ -58,7 +62,6 @@ public class servos {
         // Initialize the PID controller with our constants
         pidController.initPID(TURRET_P, TURRET_I, TURRET_D);
     }
-
 
 
     /**
@@ -69,6 +72,19 @@ public class servos {
         double currentPos = getTurretServoPos();
         double newPos = currentPos + increment;
         setTurretServoPos(newPos);
+    }
+
+    public void setIntakeServos(boolean on){
+        if(on) {
+            intakeServo1.setPosition(1);
+            intakeServo2.setPosition(0);
+
+        }
+        else {
+            intakeServo2.setPosition(.5);
+            intakeServo2.setPosition(.5);
+        }
+
     }
 
     /**

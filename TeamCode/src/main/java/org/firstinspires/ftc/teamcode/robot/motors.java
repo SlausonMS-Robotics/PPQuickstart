@@ -15,6 +15,9 @@ public class motors {
     // ---- Motor Vars ----
     private DcMotorEx shooterMotor1, shooterMotor0, transferMotor, intakeMotor;
 
+    // ---- Helper Classes ----
+    private servos myServos; // Reference to the servos class
+
     // ---- State ----
     private boolean isIntakeOn = false;
     private boolean isTransferOn = false;
@@ -22,7 +25,9 @@ public class motors {
     /**
      * Initializes all motors and sets their initial states.
      */
-    public void init(HardwareMap hardwareMap) {
+    public void init(HardwareMap hardwareMap, servos myServos) {
+        this.myServos = myServos; // Store the servos object
+
         shooterMotor1 = hardwareMap.get(DcMotorEx.class, "motor1");
         shooterMotor0 = hardwareMap.get(DcMotorEx.class, "motor0");
         shooterMotor1.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -75,23 +80,25 @@ public class motors {
         setTransferPower(TRANSFER_POWER);
         isIntakeOn = true;
         isTransferOn = true;
-
     }
 
     public boolean setIntake(boolean on){
+
         if(on){
             setIntakePower(INTAKE_POWER);
+            myServos.setIntakeServos(true); // Control the intake servos
             isIntakeOn = true;
             return true;
         }else{
             setIntakePower(0);
+            myServos.setIntakeServos(false); // Control the intake servos
             isIntakeOn = false;
             return false;
         }
     }
 
     public void transferBackwards(){
-        setTransferPower(-0.17);
+        setTransferPower(-0.1);
     }
 
     public boolean setTransfer(boolean on){
@@ -110,17 +117,18 @@ public class motors {
      * Toggles the intake motor on or off. Manages transfer motor for smooth pixel transition.
      */
     public void toggleIntake() {
-        if (!isIntakeOn) {
+        isIntakeOn = !isIntakeOn; // Toggle the state
+        myServos.setIntakeServos(isIntakeOn);
+
+        if (isIntakeOn) {
             // Turn intake on
             setIntakePower(INTAKE_POWER);
             transferBackwards();
-            isIntakeOn = true;
             isTransferOn = false;
         } else {
             // Turn intake off
-            setIntakePower(0.0); // Keep a slight forward power to settle pixels
+            setIntakePower(0.0);
             setTransferPower(0);
-            isIntakeOn = false;
             isTransferOn = false;
         }
     }

@@ -42,6 +42,7 @@ public class TurretAiming {
 
         headingAverage.initMovingAverage(3);
         distanceAverage.initMovingAverage(3);
+        Servos.setLedColor(servos.LedColor.RED);
         //llGoalDist = FAR_LAUNCH_DIST;
     }
 
@@ -62,11 +63,13 @@ public class TurretAiming {
 
             if (result.isValid()) {
                 target_acquired = true;
-                Servos.setLedColor(servos.LedColor.GREEN);
+
                 targetTimer.resetTimer();
 
                 llGoalHeadingError = headingAverage.updateAndGetAverage(result.getTx());
                 llGoalDist = distanceAverage.updateAndGetAverage(result.getBotposeAvgDist());
+                if (llGoalHeadingError < 1) Servos.setLedColor(servos.LedColor.GREEN);
+                else Servos.setLedColor(servos.LedColor.VIOLET);
 
             } else {
                 Servos.setLedColor(servos.LedColor.RED);

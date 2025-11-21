@@ -5,6 +5,7 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.robot.PoseStorage;
@@ -41,11 +42,10 @@ public class AutoAimTeleop extends OpMode {
     @Override
     public void init() {
         // Initialize all our robot hardware
-        robotMotors.init(hardwareMap); //initializes all motors
         Servos.init(hardwareMap); // This now initializes the turret servo and PID
+        robotMotors.init(hardwareMap, Servos); //initializes all motors and passes the servos object
+        mySensors.init(hardwareMap); // Initialize the sensors
         limelight.init(hardwareMap,0, telemetry);
-        mySensors.init(hardwareMap);
-
 
         follower = Constants.createFollower(hardwareMap);
         Pose startPose = PoseStorage.currentPose;
@@ -84,6 +84,7 @@ public class AutoAimTeleop extends OpMode {
     @Override
     public void start() {
 
+
             follower.startTeleopDrive(true);
             llPoseTimer.resetTimer();
 
@@ -92,14 +93,8 @@ public class AutoAimTeleop extends OpMode {
     /** This is the main loop of the opmode and runs continuously after play **/
     @Override
     public void loop() {
-        if (mySensors.artifactSeen()){
-            robotMotors.setIntake(false);
-        }
-        telemetry.addData("transfer current", robotMotors.getMotorCurrent(robotMotors.getTransferMotor()));
-        telemetry.addData("intake current", robotMotors.getMotorCurrent(robotMotors.getIntakeMotor()));
-        telemetry.addData("shooter0 current", robotMotors.getMotorCurrent(robotMotors.getShooterMotor0()));
-        telemetry.addData("shooter1 current", robotMotors.getMotorCurrent(robotMotors.getShooterMotor1()));
-        telemetry.addData("artifact dist", mySensors.getTransferDist());
+
+        telemetry.addData("dist", mySensors.getTransferDist(DistanceUnit.INCH));
 
         if (gamepad2.right_trigger > .2) { //transfer on/off (shoot)
             robotMotors.shoot();
@@ -178,4 +173,5 @@ public class AutoAimTeleop extends OpMode {
     @Override
     public void stop() {
     }
+
 }
