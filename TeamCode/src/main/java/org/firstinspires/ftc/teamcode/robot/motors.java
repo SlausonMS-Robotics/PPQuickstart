@@ -41,7 +41,7 @@ public class motors {
         shooterMotor0.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         shooterMotor1.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         // Set initial power to 0
-        setShooterVelocity(4500);
+        setShooterVelocity(0);
         setTransferPower(0);
         setIntakePower(0);
     }

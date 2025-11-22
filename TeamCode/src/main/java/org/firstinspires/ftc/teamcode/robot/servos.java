@@ -57,7 +57,7 @@ public class servos {
 
 
         // Center the turret on initialization
-        setTurretServoPos(0.5);
+        //setTurretServoPos(0.5);
 
         // Initialize the PID controller with our constants
         pidController.initPID(TURRET_P, TURRET_I, TURRET_D);

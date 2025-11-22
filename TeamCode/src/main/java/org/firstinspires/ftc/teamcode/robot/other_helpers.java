@@ -16,9 +16,9 @@ public class other_helpers {
     public static int redGoalX = 132;
     public static int redGoalY = 136;
 
-    public static final double MAX_RPM = 5000;
+    public static final double MAX_RPM = 4650;
 
-    public static final double MIN_RPM = 2000;
+    public static final double MIN_RPM = 3200;
 
     private ElapsedTime timer = new ElapsedTime();
 
@@ -129,8 +129,8 @@ public class other_helpers {
 
         // --- Linear Model Constants ---
         //
-        private static final double RPM_PER_METER = 375; // The slope of the line (how much RPM to add per meter)
-        private static final double FAR_MAX_RPM = 4650;
+        private static final double RPM_PER_METER = 425; // The slope of the line (how much RPM to add per meter)
+        private static final double FAR_MAX_RPM = 4750;
 
 
         private static final double BASE_RPM = 3150;     // The base RPM at min distance

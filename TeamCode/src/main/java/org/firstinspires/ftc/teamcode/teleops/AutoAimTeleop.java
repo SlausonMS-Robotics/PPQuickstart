@@ -45,16 +45,20 @@ public class AutoAimTeleop extends OpMode {
         Servos.init(hardwareMap); // This now initializes the turret servo and PID
         robotMotors.init(hardwareMap, Servos); //initializes all motors and passes the servos object
         mySensors.init(hardwareMap); // Initialize the sensors
-        myAllianceColor = PoseStorage.allianceColor;
+        //myAllianceColor = PoseStorage.allianceColor;
+        follower = Constants.createFollower(hardwareMap);
         if("blue".equals(myAllianceColor)) {
             limelight.init(hardwareMap, 0, telemetry);
+            Pose startPose = new Pose(0,0,Math.toRadians(90));
         }
         else {
             limelight.init(hardwareMap, 1, telemetry);
+            Pose startPose = new Pose(0,0,Math.toRadians(90));
         }
 
-        follower = Constants.createFollower(hardwareMap);
+
         Pose startPose = PoseStorage.currentPose;
+
         follower.setStartingPose(startPose);
         telemetry.addData("Starting Pose", startPose);
 
@@ -75,14 +79,14 @@ public class AutoAimTeleop extends OpMode {
     public void init_loop() {
         if(buttonDebounceTimer.getElapsedTime() > 500 && (gamepad1.start || gamepad2.start)){
             buttonDebounceTimer.resetTimer();
-            if("blue".equals(myAllianceColor)){
-                myAllianceColor = "red";
-            } else {
+            if("red".equals(myAllianceColor)){
                 myAllianceColor = "blue";
+            } else {
+                myAllianceColor = "red";
             }
             telemetry.addData("Alliance Color", myAllianceColor);
             telemetry.update();
-            PoseStorage.allianceColor = myAllianceColor;
+
         }
     }
 
@@ -157,7 +161,7 @@ public class AutoAimTeleop extends OpMode {
             double scalar;
             if (gamepad1.left_trigger > .2 || gamepad2.left_trigger > .2) { //driver
                 scalar = .5; //sets speed of change -> lower = slower
-                follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 1), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar, 1), false);
+                follower.setTeleOpDrive(Math.pow(gamepad1.left_stick_y * scalar, 1), Math.pow(gamepad1.left_stick_x * scalar, 1), Math.pow(gamepad1.right_stick_x * scalar, 1), false);
             } else {
                 scalar = 1.0; //sets speed of change -> lower = slower
                 follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 1), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar, 1), false);

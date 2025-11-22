@@ -85,7 +85,7 @@ public class TurretAiming {
                 goalDistance = llGoalDist;
                 goalHeadingError = llGoalHeadingError;
             } else {
-                goalDistance = 2.0;
+                goalDistance = llGoalDist;
                 goalHeadingError = 0;
                 //goalDistance = other_helpers.distanceToGoal(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
                 //goalHeadingError = other_helpers.getHeadingErrorToGoal(follower.getPose().getX(), follower.getPose().getY(), follower.getPose().getHeading(), myAllianceColor);

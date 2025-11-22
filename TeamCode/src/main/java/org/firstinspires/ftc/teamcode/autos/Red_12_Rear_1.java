@@ -1,11 +1,11 @@
 package org.firstinspires.ftc.teamcode.autos;
 
-
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -23,7 +23,7 @@ public class Red_12_Rear_1 extends OpMode {
     private String myAllianceColor = "red";
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
-    private int pathState; // Current autonomous path state (state machine)
+    private int pathState = 0; // Current autonomous path state (state machine)
     private Paths paths; // Paths defined in the Paths class
 
     // Robot hardware and logic classes
@@ -33,6 +33,10 @@ public class Red_12_Rear_1 extends OpMode {
     private TurretAiming turretAimer;
 
     private Timer pathTimer, actionTimer, opmodeTimer;
+    private int loopCount = 1;
+
+
+
 
     @Override
     public void init() {
@@ -40,27 +44,28 @@ public class Red_12_Rear_1 extends OpMode {
 
         // Initialize hardware
         robotMotors = new motors();
-        robotMotors.init(hardwareMap, Servos);
         Servos = new servos();
         Servos.init(hardwareMap);
+        robotMotors.init(hardwareMap, Servos);
+
         limelight = new limelight3A();
-        limelight.init(hardwareMap, 0, telemetry);
+        limelight.init(hardwareMap, 1, telemetry);
 
         // Initialize path follower
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));
+        follower.setStartingPose(new Pose(68, 8, Math.toRadians(90)));
 
         // Initialize reusable aiming class
         turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
 
-        // Build paths from the external Paths class, selecting the RED_12_REAR_1 set
-        paths = new Paths(follower, Paths.AutoPath.RED_12_REAR_1);
+        paths = new Paths(follower, Paths.AutoPath.RED_12_REAR_1); // Build paths from the external Paths class
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
         pathTimer = new Timer();
         actionTimer = new Timer();
         opmodeTimer = new Timer();
+
     }
 
     @Override
@@ -68,12 +73,15 @@ public class Red_12_Rear_1 extends OpMode {
         pathTimer.resetTimer();
         actionTimer.resetTimer();
         opmodeTimer.resetTimer();
+        Servos.setTurretServoPos(.45);
+        robotMotors.setShooterVelocity(1943);
     }
 
     @Override
     public void loop() {
         follower.update(); // Update Pedro Pathing
-        turretAimer.update(myAllianceColor); // Update turret aim continuously
+
+        turretAimer.update(myAllianceColor); // Update turret aim and shooter speed continuously
         autonomousPathUpdate(); // Update autonomous state machine
 
         // Log values to Panels and Driver Station
@@ -84,37 +92,103 @@ public class Red_12_Rear_1 extends OpMode {
         panelsTelemetry.update(telemetry);
     }
 
+    public void autonomousPathUpdate(){
+        if(loopCount == 1) {
+            if (opmodeTimer.getElapsedTime() > 4000) {
+                shootAction();
+                loopCount++;
+            }
+        }
+        /*
+        else if (loopCount == 2) {
+            if (opmodeTimer.getElapsedTime() > 7000) {
+                intakeAction();
+                intakeAction();
+                follower.followPath(paths.Path2, .4, true);
+
+                loopCount++;
+            }
+        }
+        /*
+        else if (loopCount == 3) {
+            if (opmodeTimer.getElapsedTime() > 10000){
+                follower.followPath(paths.Path3, true);
+                loopCount++;
+            }
+        }
+        else if (loopCount == 4) {
+            if (opmodeTimer.getElapsedTime() > 14000) {
+                intakeAction();
+                follower.followPath(paths.Path4, true);
+
+                loopCount++;
+            }
+        }
+        else if (loopCount == 5) {
+            if (opmodeTimer.getElapsedTime() > 19000) {
+                shootAction();
+                loopCount ++;
+            }
+        }
+        else if (loopCount == 6) {
+            if (opmodeTimer.getElapsedTime() > 23000) {
+                follower.followPath(paths.Path2,true);
+                loopCount++;
+            }}
+
+         */
+    }
+
+
+/*
     public void autonomousPathUpdate() {
         switch (pathState) {
-            case 0:
-                follower.followPath(paths.Path1);
-                setPathState(1);
+            case 0: //shoot
+                if (opmodeTimer.getElapsedTime() > 1500) { //delay a little to make sure robot is ready to shootAction
+                    shootAction();
+                }
+                if(actionTimer.getElapsedTime() > 1500){
+                    intakeAction(); //intake on
+                    setPathState(1);
+                    follower.followPath(paths.Path1, true);
+
+                    pathTimer.resetTimer();
+                    telemetry.addData("PathState", 1);
+                    telemetry.update();
+
+                }
                 break;
-            case 1:
-                if (!follower.isBusy()) {
+            case 1: //go to first row
+                if (pathTimer.getElapsedTime() > 2000) {
                     follower.followPath(paths.Path2, true);
                     setPathState(2);
                 }
                 break;
-            case 2:
+            case 2: //intake
                 if (!follower.isBusy()) {
+                    intakeAction(); //intake off
                     follower.followPath(paths.Path3, true);
                     setPathState(3);
                 }
                 break;
-            case 3:
+            case 3: //shoot
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path4, true);
-                    setPathState(4);
+                    shootAction();
+                    if(actionTimer.getElapsedTime() > 1000) {
+                        follower.followPath(paths.Path4, true);
+                        setPathState(4);
+                        intakeAction(); //intake on
+                    }
                 }
                 break;
-            case 4:
+            case 4: //go to second row
                 if (!follower.isBusy()) {
+                    intakeAction(); //intake on
                     follower.followPath(paths.Path5, true);
                     setPathState(5);
                 }
                 break;
-            case 5:
+            case 5: //shoot
                 if (!follower.isBusy()) {
                     follower.followPath(paths.Path6, true);
                     setPathState(6);
@@ -123,13 +197,16 @@ public class Red_12_Rear_1 extends OpMode {
             case 6:
                 if (!follower.isBusy()) {
                     follower.followPath(paths.Path7, true);
-                    setPathState(7);
+                    setPathState(-1);
                 }
                 break;
             case 7:
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path8, true);
-                    setPathState(8);
+                    shootAction();
+                    if(actionTimer.getElapsedTime() > 1000) {
+                        follower.followPath(paths.Path8, true);
+                        setPathState(8);
+                    }
                 }
                 break;
             case 8:
@@ -150,6 +227,22 @@ public class Red_12_Rear_1 extends OpMode {
                 }
                 break;
         }
+
+ */
+
+
+    public void shootAction(){
+
+        robotMotors.shoot();
+        actionTimer.resetTimer();
+
+    }
+
+    public void intakeAction() {
+
+        //robotMotors.stopTransfer();
+        robotMotors.toggleIntake();
+        actionTimer.resetTimer();
     }
 
     /**
