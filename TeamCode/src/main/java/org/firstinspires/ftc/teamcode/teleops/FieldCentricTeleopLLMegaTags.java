@@ -33,6 +33,7 @@ public class FieldCentricTeleopLLMegaTags extends OpMode {
     private double ll_goal_dist = 0;
     private double ll_goal_heading = 0;
     private Timer myTimer, llTimer;
+    private servos Servos;
     servos turretServo = new servos();
     motors shooter = new motors();
     limelight3A limelight = new limelight3A();
@@ -55,7 +56,7 @@ public class FieldCentricTeleopLLMegaTags extends OpMode {
             follower.setStartingPose(startPose);
         }
         turretServo.init(hardwareMap);
-        shooter.init(hardwareMap);
+        shooter.init(hardwareMap, Servos);
         limelight.init(hardwareMap,0, telemetry);
 
         headingPid.initPID(SERVO_P, SERVO_I, SERVO_D);

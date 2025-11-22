@@ -66,9 +66,9 @@ public class TurretAiming {
 
                 targetTimer.resetTimer();
 
-                llGoalHeadingError = headingAverage.updateAndGetAverage(result.getTx());
-                llGoalDist = distanceAverage.updateAndGetAverage(result.getBotposeAvgDist());
-                if (llGoalHeadingError < 1) Servos.setLedColor(servos.LedColor.GREEN);
+                llGoalHeadingError = result.getTx();
+                llGoalDist = result.getBotposeAvgDist();
+                if (Math.abs(llGoalHeadingError) < 1) Servos.setLedColor(servos.LedColor.GREEN);
                 else Servos.setLedColor(servos.LedColor.VIOLET);
 
             } else {
@@ -85,8 +85,8 @@ public class TurretAiming {
                 goalDistance = llGoalDist;
                 goalHeadingError = llGoalHeadingError;
             } else {
-                goalDistance = llGoalDist;
-                goalHeadingError = llGoalHeadingError;
+                goalDistance = 2.0;
+                goalHeadingError = 0;
                 //goalDistance = other_helpers.distanceToGoal(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
                 //goalHeadingError = other_helpers.getHeadingErrorToGoal(follower.getPose().getX(), follower.getPose().getY(), follower.getPose().getHeading(), myAllianceColor);
             }
@@ -94,13 +94,13 @@ public class TurretAiming {
             // Set shooter velocity
             if (goalDistance > .1 && goalDistance < 5) {
                 double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(goalDistance);
-                speed = Range.clip((targetRPM + shooterSpeedAdjust) * ticks_per_rev / 60, helpers.MIN_RPM, helpers.MAX_RPM);
+                speed = Range.clip((targetRPM) * ticks_per_rev / 60, helpers.MIN_RPM * ticks_per_rev / 60, helpers.MAX_RPM * ticks_per_rev / 60);
                 robotMotors.setShooterVelocity(speed);
             }
 
             // Adjust turret using PID
             if (Math.abs(goalHeadingError) > 0.0) {
-                Servos.updateTurretWithPID(goalHeadingError + turretPosAdjust);
+                Servos.updateTurretWithPID(goalHeadingError);
             }
 
             if (telemetry != null) {

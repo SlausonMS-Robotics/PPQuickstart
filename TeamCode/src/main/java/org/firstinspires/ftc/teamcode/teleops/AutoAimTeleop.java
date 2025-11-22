@@ -94,9 +94,9 @@ public class AutoAimTeleop extends OpMode {
     @Override
     public void loop() {
 
-        telemetry.addData("dist", mySensors.getTransferDist(DistanceUnit.INCH));
+        //telemetry.addData("dist", mySensors.getTransferDist(DistanceUnit.INCH));
 
-        if (gamepad2.right_trigger > .2) { //transfer on/off (shoot)
+        if (gamepad1.right_trigger > .2) { //transfer on/off (shoot)
             robotMotors.shoot();
         } else {
             if(robotMotors.isIntakeOn()) {
@@ -104,7 +104,7 @@ public class AutoAimTeleop extends OpMode {
             }
             else robotMotors.setTransfer(false);
         }
-
+/*
         // Manual turret control with right joystick
         if (Math.abs(gamepad2.right_stick_x) > 0.1) {
             Servos.moveTurretManually(gamepad2.right_stick_x / 100);
@@ -113,10 +113,10 @@ public class AutoAimTeleop extends OpMode {
         else {
             turretAimer.setManualTurret(false);
         }
-
+*/
         // Gamepad button logic for adjustments and intake
         if (buttonDebounceTimer.getElapsedTime() >= 250) { //debounce all buttons
-            if (other_helpers.anyButtonPressed(gamepad2)) {
+            if (other_helpers.anyButtonPressed(gamepad2) || gamepad1.a || gamepad1.y) {
                 int shooterSpeedAdjustIncrement = 50;
                 if (gamepad2.dpad_up) {
                     shooterSpeedAdjust += shooterSpeedAdjustIncrement;
@@ -133,7 +133,7 @@ public class AutoAimTeleop extends OpMode {
                     turretPosAdjust -= turretPosAdjustIncrement;
                 }
 
-                if (gamepad2.a || gamepad2.y) { //intake on/off
+                if (gamepad1.a || gamepad1.y) { //intake on/off
                     robotMotors.toggleIntake(); //toggle intake
                 }
                 buttonDebounceTimer.resetTimer();

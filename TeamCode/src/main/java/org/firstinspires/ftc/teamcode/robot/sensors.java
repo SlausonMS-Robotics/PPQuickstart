@@ -54,7 +54,7 @@ public class sensors {
     }
 
     public boolean artifactSeen(){
-        if(distanceSensor2m.getDistance(DistanceUnit.MM) < 40 && artSeenTimer.getElapsedTime() > 5){
+        if(distanceSensor2m.getDistance(DistanceUnit.MM) < 80 && artSeenTimer.getElapsedTime() > 5){
             artSeenCount++;
             artSeenTimer.resetTimer();
         }

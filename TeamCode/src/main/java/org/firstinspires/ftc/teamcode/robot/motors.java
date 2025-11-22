@@ -41,7 +41,7 @@ public class motors {
         shooterMotor0.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         shooterMotor1.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         // Set initial power to 0
-        setShooterVelocity(0);
+        setShooterVelocity(4200);
         setTransferPower(0);
         setIntakePower(0);
     }
@@ -98,7 +98,7 @@ public class motors {
     }
 
     public void transferBackwards(){
-        setTransferPower(-0.1);
+        setTransferPower(-0.17);
     }
 
     public boolean setTransfer(boolean on){

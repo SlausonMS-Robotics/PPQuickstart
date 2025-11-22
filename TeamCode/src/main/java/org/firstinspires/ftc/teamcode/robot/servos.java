@@ -9,15 +9,15 @@ public class servos {
 
     // ---- Constants ----
 
-    public static final double TURRET_MIN_POS = .2;
-    public static final double TURRET_MAX_POS = .8;
+    public static final double TURRET_MIN_POS = .4;
+    public static final double TURRET_MAX_POS = .6;
     public static final double MANUAL_TURRET_SPEED = 0.005; // Adjust this for manual control sensitivity
 
     // ---- PID Constants ----
     // NOTE: These will need to be tuned for your specific robot
-    public static final double TURRET_P = 0.07;
+    public static final double TURRET_P = 0.02;
     public static final double TURRET_I = 0.0;
-    public static final double TURRET_D = 0.015;
+    public static final double TURRET_D = 0.005;
 
     // ---- PID Controller ----
     private other_helpers pidController = new other_helpers();
@@ -51,13 +51,13 @@ public class servos {
         turretServo = hardwareMap.get(ServoImplEx.class, "shservo0");
         ledServo = hardwareMap.get(ServoImplEx.class, "shservo1");
         ledServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
-        intakeServo1 = hardwareMap.get(ServoImplEx.class, "shservo3");
+        intakeServo1 = hardwareMap.get(ServoImplEx.class, "shservo2");
         intakeServo2 = hardwareMap.get(ServoImplEx.class, "shservo4");
 
 
 
         // Center the turret on initialization
-        //setTurretServoPos(0.5);
+        setTurretServoPos(0.5);
 
         // Initialize the PID controller with our constants
         pidController.initPID(TURRET_P, TURRET_I, TURRET_D);
@@ -69,19 +69,22 @@ public class servos {
      * @param increment the distance to move the turret in one call of the method.
      */
     public void moveTurretManually(double increment) {
+        /*
         double currentPos = getTurretServoPos();
         double newPos = currentPos + increment;
         setTurretServoPos(newPos);
+
+         */
     }
 
     public void setIntakeServos(boolean on){
         if(on) {
-            intakeServo1.setPosition(1);
-            intakeServo2.setPosition(0);
+            intakeServo1.setPosition(0);
+            intakeServo2.setPosition(1);
 
         }
         else {
-            intakeServo2.setPosition(.5);
+            intakeServo1.setPosition(.5);
             intakeServo2.setPosition(.5);
         }
 

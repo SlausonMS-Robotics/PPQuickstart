@@ -40,7 +40,7 @@ public class Red_12_Rear_1 extends OpMode {
 
         // Initialize hardware
         robotMotors = new motors();
-        robotMotors.init(hardwareMap);
+        robotMotors.init(hardwareMap, Servos);
         Servos = new servos();
         Servos.init(hardwareMap);
         limelight = new limelight3A();
