@@ -45,7 +45,13 @@ public class AutoAimTeleop extends OpMode {
         Servos.init(hardwareMap); // This now initializes the turret servo and PID
         robotMotors.init(hardwareMap, Servos); //initializes all motors and passes the servos object
         mySensors.init(hardwareMap); // Initialize the sensors
-        limelight.init(hardwareMap,0, telemetry);
+        myAllianceColor = PoseStorage.allianceColor;
+        if("blue".equals(myAllianceColor)) {
+            limelight.init(hardwareMap, 0, telemetry);
+        }
+        else {
+            limelight.init(hardwareMap, 1, telemetry);
+        }
 
         follower = Constants.createFollower(hardwareMap);
         Pose startPose = PoseStorage.currentPose;
@@ -59,7 +65,7 @@ public class AutoAimTeleop extends OpMode {
         llPoseTimer = new Timer();
         buttonDebounceTimer = new Timer();
         
-        myAllianceColor = PoseStorage.allianceColor;
+
         telemetry.addData("Alliance Color", myAllianceColor);
         telemetry.update();
     }

@@ -85,11 +85,11 @@ public class Blue_12_Rear_1 extends OpMode {
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                if (opmodeTimer.getElapsedTime() > 500) { //delay a little to make sure robot is ready to shootAction
+                if (opmodeTimer.getElapsedTime() > 1500) { //delay a little to make sure robot is ready to shootAction
                     shootAction();
                 }
                 if(pathTimer.getElapsedTime() > 1500){
-                    intakeAction();
+                    intakeAction(); //intake on
                     follower.followPath(paths.Path1);
                     setPathState(1);
 

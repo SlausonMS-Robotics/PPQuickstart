@@ -40,8 +40,8 @@ public class TurretAiming {
         this.robotMotors = robotMotors;
         this.telemetry = telemetry;
 
-        headingAverage.initMovingAverage(3);
-        distanceAverage.initMovingAverage(3);
+        headingAverage.initMovingAverage(2);
+        distanceAverage.initMovingAverage(2);
         Servos.setLedColor(servos.LedColor.RED);
         //llGoalDist = FAR_LAUNCH_DIST;
     }
@@ -103,7 +103,7 @@ public class TurretAiming {
                 Servos.updateTurretWithPID(goalHeadingError);
             }
 
-            if (telemetry != null) {
+            if (telemetry == null) {
                 telemetry.addData("Target Acquired?", target_acquired);
                 telemetry.addData("RPM", speed * 60 / ticks_per_rev);
                 telemetry.addData("Goal Distance", goalDistance);

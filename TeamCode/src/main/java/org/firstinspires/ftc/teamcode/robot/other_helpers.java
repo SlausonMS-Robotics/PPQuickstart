@@ -129,11 +129,11 @@ public class other_helpers {
 
         // --- Linear Model Constants ---
         //
-        private static final double RPM_PER_METER = 280; // The slope of the line (how much RPM to add per meter)
-        private static final double FAR_MAX_RPM = 4200;
+        private static final double RPM_PER_METER = 375; // The slope of the line (how much RPM to add per meter)
+        private static final double FAR_MAX_RPM = 4650;
 
 
-        private static final double BASE_RPM = 2800;     // The base RPM at min distance
+        private static final double BASE_RPM = 3150;     // The base RPM at min distance
 
         /**
          * Get required flywheel RPM for a given shot distance (m) using a linear model.
@@ -141,8 +141,10 @@ public class other_helpers {
          * it can be tuned to account for real-world factors like air resistance and energy loss.
          */
         public static double getRPMForDistance(double rangeMeters) {
-            if (rangeMeters <= 1) return BASE_RPM;
-            if (rangeMeters >= 3) return FAR_MAX_RPM;
+            if (rangeMeters < 1) return BASE_RPM - 200;
+            else if (rangeMeters < 1.5) return BASE_RPM;
+            else if (rangeMeters < 2.5) return BASE_RPM + 300;
+            else if (rangeMeters >= 2.8) return FAR_MAX_RPM;
             return BASE_RPM + (rangeMeters * RPM_PER_METER);
         }
 
