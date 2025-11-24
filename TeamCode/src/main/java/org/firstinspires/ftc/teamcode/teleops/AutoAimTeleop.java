@@ -115,13 +115,7 @@ public class AutoAimTeleop extends OpMode {
                     shooterSpeedAdjust -= shooterSpeedAdjustIncrement;
                 }
 
-                double turretPosAdjustIncrement = .008;
-                if (gamepad2.dpad_right) {
-                    turretPosAdjust += turretPosAdjustIncrement;
-                }
-                if (gamepad2.dpad_left) {
-                    turretPosAdjust -= turretPosAdjustIncrement;
-                }
+
 
                 if (gamepad2.a || gamepad2.y) { //intake on/off
                     robotMotors.setIntake(!robotMotors.isIntakeOn()); //toggle intake
