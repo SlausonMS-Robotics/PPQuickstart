@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.robot;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.util.Timer;
 import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -14,23 +13,14 @@ public class TurretAiming {
     private final servos Servos;
     private final motors robotMotors;
     private final Telemetry telemetry;
-
-    private final other_helpers helpers = new other_helpers();
-
     private final other_helpers headingAverage = new other_helpers();
+    private final other_helpers helpers = new other_helpers();
     private final other_helpers distanceAverage = new other_helpers();
 
     private final Timer targetTimer = new Timer();
     private final Timer llTimer = new Timer();
 
-    private boolean target_acquired = false;
-    private double llGoalDist = 0;
-    private double llGoalHeadingError = 0;
-    private double speed = 0;
-    private int shooterSpeedAdjust = 0;
-    private double turretPosAdjust = 0;
-    private static final int ticks_per_rev = 28;
-    private boolean isManualTurret = false;
+    private boolean targetAcquired = false;
 
     public TurretAiming(Follower follower, limelight3A limelight, servos Servos, motors robotMotors, Telemetry telemetry) {
         this.follower = follower;
@@ -39,79 +29,69 @@ public class TurretAiming {
         this.robotMotors = robotMotors;
         this.telemetry = telemetry;
 
-        headingAverage.initMovingAverage(3);
-        distanceAverage.initMovingAverage(3);
+        headingAverage.initMovingAverage(2);
+        distanceAverage.initMovingAverage(2);
     }
 
-    public boolean isManualTurret() {
-        return this.isManualTurret;
-    }
+    /**
+     * Main update loop for turret aiming.
+     * @param myAllianceColor The current alliance color ("blue" or "red").
+     * @param useOdometry If true, aims using only odometry. If false, uses Limelight with odometry fallback.
+     */
+    public void update(String myAllianceColor, boolean useOdometry) {
+        double goalDistanceMeters;
+        double goalHeadingErrorDeg;
+        goalDistanceMeters = other_helpers.distanceToGoal(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
+        goalHeadingErrorDeg = other_helpers.getHeadingErrorToGoal(follower.getPose().getX(), follower.getPose().getY(), follower.getPose().getHeading(), myAllianceColor);
 
-    public void setManualTurret(boolean isManualTurret) {
-        this.isManualTurret = isManualTurret;
-    }
+        if (!useOdometry) {
 
+            // --- VISION AIMING WITH ODOMETRY FALLBACK ---
+            if (llTimer.getElapsedTime() >= 10) {
+                LLResult result = limelight.limelight.getLatestResult();
+                llTimer.resetTimer();
 
-
-    public void update(String myAllianceColor) {
-        if (llTimer.getElapsedTime() >= 10) {
-            LLResult result = limelight.limelight.getLatestResult();
-            llTimer.resetTimer();
-
-            if (result.isValid()) {
-                target_acquired = true;
-                Servos.setLedColor(servos.LedColor.GREEN);
-                targetTimer.resetTimer();
-
-                llGoalHeadingError = headingAverage.updateAndGetAverage(result.getTx());
-                llGoalDist = distanceAverage.updateAndGetAverage(result.getBotposeAvgDist());
-
-            } else {
-                Servos.setLedColor(servos.LedColor.RED);
-                if (targetTimer.getElapsedTime() >= 500) {
-                    target_acquired = false;
+                if (result.isValid()) {
+                    targetAcquired = true;
+                    Servos.setLedColor(servos.LedColor.GREEN);
                     targetTimer.resetTimer();
+
+                    // Use vision data for distance and heading
+                    goalDistanceMeters = distanceAverage.updateAndGetAverage(result.getBotposeAvgDist());
+                    goalHeadingErrorDeg = headingAverage.updateAndGetAverage(result.getTx());
+
+                } else {
+
+
+                    if (targetTimer.getElapsedTime() >= 500) {
+                        targetAcquired = false;
+                        Servos.setLedColor(servos.LedColor.RED);
+                    }
                 }
             }
+        }
 
-            double goalDistance;
-            double goalHeadingError;
-            if (target_acquired) {
-                goalDistance = llGoalDist;
-                goalHeadingError = llGoalHeadingError;
-            } else {
-                goalDistance = other_helpers.distanceToGoal(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
-                goalHeadingError = other_helpers.getHeadingErrorToGoal(follower.getPose().getX(), follower.getPose().getY(), follower.getPose().getHeading(), myAllianceColor);
-            }
 
-            // Set shooter velocity
-            if (goalDistance > .1 && goalDistance < 5) {
-                double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(goalDistance);
-                speed = Range.clip((targetRPM + shooterSpeedAdjust) * ticks_per_rev / 60, helpers.MIN_RPM, helpers.MAX_RPM);
-                robotMotors.setShooterVelocity(speed);
-            }
+        // --- SHARED AIMING LOGIC ---
+        double targetRPM = helpers.getRPMForDistance(goalDistanceMeters);
+        // Set shooter velocity
+        if (goalDistanceMeters > 0.1 && goalDistanceMeters < 5) {
 
-            // Adjust turret using PID
-            if (Math.abs(goalHeadingError) > 0.0) {
-                Servos.updateTurretWithPID(goalHeadingError + turretPosAdjust);
-            }
+            robotMotors.setShooterVelocity(targetRPM);
+        }
 
-            if (telemetry != null) {
-                telemetry.addData("Target Acquired?", target_acquired);
-                telemetry.addData("RPM", speed * 60 / ticks_per_rev);
-                telemetry.addData("Goal Distance", goalDistance);
-                telemetry.addData("Goal Heading Error", goalHeadingError);
-                telemetry.addData("Current Pose", follower.getPose());
-                telemetry.update();
-            }
+        // Adjust turret using PID
+        if (Math.abs(goalHeadingErrorDeg) > .25) { // Deadband in degrees
+            Servos.updateTurretWithPID(goalHeadingErrorDeg);
+        }
+
+        if (telemetry != null) {
+            telemetry.addData("Aiming Mode", (useOdometry ? "Odometry" : (targetAcquired ? "Vision" : "Odom Fallback")));
+            telemetry.addData("RPM", targetRPM);
+            telemetry.addData("Goal Distance", goalDistanceMeters);
+            telemetry.addData("Goal Heading Error", Math.toDegrees(goalHeadingErrorDeg));
+            telemetry.update();
         }
     }
 
-    public void setShooterSpeedAdjust(int adjustment) {
-        this.shooterSpeedAdjust = adjustment;
-    }
-
-    public void setTurretPosAdjust(double adjustment) {
-        this.turretPosAdjust = adjustment;
-    }
 }

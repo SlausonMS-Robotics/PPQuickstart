@@ -1,54 +1,46 @@
 package org.firstinspires.ftc.teamcode.robot;
 
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class motors {
 
     // ---- Constants ----
     private static final double INTAKE_POWER = 1.0;
     private static final double TRANSFER_POWER = 1.0;
-    private static final String SHOOTER_0_NAME = "shooter0";
-    private static final String SHOOTER_1_NAME = "shooter1";
-    private static final String TRANSFER_NAME = "transfer0";
-    private static final String INTAKE_NAME = "intake0";
+    private static final double TRANSFER_REVERSE_POWER = -.18;
+    public int transferState = 0;
+    public int intakeState = 0;
+    public int shooterState = 0;
 
-    // ---- Motor Storage ----
-    private Map<String, DcMotorEx> motorMap = new HashMap<>();
+    // ---- Motor Fields ----
+    private DcMotorEx shooterMotor0;
+    private DcMotorEx shooterMotor1;
+    private DcMotorEx transferMotor;
+    private DcMotorEx intakeMotor;
+    private static final int ticks_per_rev = 28;
 
-    // ---- State ----
-    private boolean isIntakeOn = false;
-    private boolean isTransferOn = false;
 
     public motors() {}
 
     /**
-     * Initializes all motors and stores them in a map for easy access.
+     * Initializes all motors and assigns them to their fields.
      */
     public void init(HardwareMap hardwareMap) {
-        // Create and initialize each motor, then add it to the map.
-        DcMotorEx shooterMotor1 = hardwareMap.get(DcMotorEx.class, SHOOTER_1_NAME);
+        shooterMotor1 = hardwareMap.get(DcMotorEx.class, "motor1");
         shooterMotor1.setDirection(DcMotorSimple.Direction.REVERSE);
         shooterMotor1.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        motorMap.put(SHOOTER_1_NAME, shooterMotor1);
 
-        DcMotorEx shooterMotor0 = hardwareMap.get(DcMotorEx.class, SHOOTER_0_NAME);
+        shooterMotor0 = hardwareMap.get(DcMotorEx.class, "motor0");
         shooterMotor0.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        motorMap.put(SHOOTER_0_NAME, shooterMotor0);
 
-        DcMotorEx transferMotor = hardwareMap.get(DcMotorEx.class, TRANSFER_NAME);
+        transferMotor = hardwareMap.get(DcMotorEx.class, "motor2");
         transferMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-        motorMap.put(TRANSFER_NAME, transferMotor);
 
-        DcMotorEx intakeMotor = hardwareMap.get(DcMotorEx.class, INTAKE_NAME);
+        intakeMotor = hardwareMap.get(DcMotorEx.class, "motor3");
         intakeMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         intakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        motorMap.put(INTAKE_NAME, intakeMotor);
 
         // Set initial power to 0 for all motors
         setShooterVelocity(0);
@@ -56,106 +48,100 @@ public class motors {
         setIntakePower(0);
     }
 
-    // ---- Generic Getters and Setters ----
-
-    public DcMotorEx getMotor(String motorName) {
-        return motorMap.get(motorName);
-    }
-
-    public void setMotorVelocity(String motorName, double velocity) {
-        DcMotorEx motor = motorMap.get(motorName);
-        if (motor != null) {
-            motor.setVelocity(velocity);
-        }
-    }
-
-    public double getMotorVelocity(String motorName) {
-        DcMotorEx motor = motorMap.get(motorName);
-        if (motor != null) {
-            return motor.getVelocity();
-        }
-        return 0;
-    }
-
-    public void setMotorPower(String motorName, double power) {
-        DcMotorEx motor = motorMap.get(motorName);
-        if (motor != null) {
-            motor.setPower(power);
-        }
-    }
-
-    public double getMotorPower(String motorName) {
-        DcMotorEx motor = motorMap.get(motorName);
-        if (motor != null) {
-            return motor.getPower();
-        }
-        return 0;
-    }
-
     // ---- Specific Action Methods ----
 
     public void shoot() {
-        setIntakePower(INTAKE_POWER);
-        setTransferPower(TRANSFER_POWER);
-        isIntakeOn = true;
-        isTransferOn = true;
+        setIntakeState(1);
+        setTransferState(1);
     }
 
-    /**
-     * Toggles the intake state between on and off.
-     */
-    public void toggleIntake() {
-        // Call the setter with the opposite of the current state.
-        setIntakeState(!isIntakeOn);
+    public double getShooterVelocity(int motorRPM){
+        return motorRPM * ticks_per_rev / 60;
     }
 
-    /**
-     * Explicitly sets the intake mechanism to an on or off state.
-     * This is an overloaded method that provides the "optional" parameter.
-     * @param on True to turn the intake on, false to turn it off.
-     */
-    public void setIntakeState(boolean on) {
-        if (on) {
-            // Logic to turn the intake on
-            setIntakePower(INTAKE_POWER);
-            setTransferPower(-0.18); // Anti-creep
-            isIntakeOn = true;
-            isTransferOn = false;
-        } else {
-            // Logic to turn the intake off
-            setIntakePower(0.0);
-            setTransferPower(0);
-            isIntakeOn = false;
-            isTransferOn = false;
+
+
+    public int getTransferState(){
+        return transferState;
+    }
+
+    public int getIntakeState(){
+        return intakeState;
+    }
+
+    public int getShooterState(){
+        return shooterState;
+    }
+
+    public void setIntakeState(int state) {
+        switch (state) {
+            case 1:
+                setIntakePower(INTAKE_POWER);
+                transferState = 1;
+                break;
+            case 0:
+                setIntakePower(0);
+                transferState = 0;
+                break;
         }
     }
 
-    // --- Specific Setters (for backward compatibility) --- //
+    public void setTransferState(int state) {
+        switch (state) {
+            case 1:
+                setTransferPower(TRANSFER_POWER);
+                transferState = 1;
+                break;
+            case 0:
+                setTransferPower(0);
+                transferState = 0;
+                break;
+            case 2:
+                setTransferPower(TRANSFER_REVERSE_POWER);
+                transferState = 2;
+                break;
+        }
+    }
+
+
+
+
 
     public void setShooterVelocity(double velocity) {
-        setMotorVelocity(SHOOTER_0_NAME, velocity);
-        setMotorVelocity(SHOOTER_1_NAME, velocity);
+        if (shooterMotor0 != null) shooterMotor0.setVelocity(velocity);
+        if (shooterMotor1 != null) shooterMotor1.setVelocity(velocity);
+    }
+
+    public double getShooterVelocity() {
+        if (shooterMotor0 != null) {
+            return shooterMotor0.getVelocity();
+        }
+        return 0;
     }
 
     public void setTransferPower(double power) {
-        setMotorPower(TRANSFER_NAME, power);
-    }
-
-    public void setIntakePower(double power) {
-        setMotorPower(INTAKE_NAME, power);
-    }
-
-    // --- Specific Getters --- //
-
-    public double getShooterVelocity() {
-        return getMotorVelocity(SHOOTER_0_NAME);
+        if (transferMotor != null) {
+            transferMotor.setPower(power);
+        }
     }
 
     public double getTransferPower() {
-        return getMotorPower(TRANSFER_NAME);
+        if (transferMotor != null) {
+            return transferMotor.getPower();
+        }
+        return 0;
+    }
+
+    public void setIntakePower(double power) {
+        if (intakeMotor != null) {
+            intakeMotor.setPower(power);
+        }
     }
 
     public double getIntakePower() {
-        return getMotorPower(INTAKE_NAME);
+        if (intakeMotor != null) {
+            return intakeMotor.getPower();
+        }
+        return 0;
     }
 }

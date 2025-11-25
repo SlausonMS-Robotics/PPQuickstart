@@ -16,9 +16,10 @@ public class other_helpers {
     public static int redGoalX = 132;
     public static int redGoalY = 136;
 
-    public static final double MAX_RPM = 5000;
 
-    public static final double MIN_RPM = 2000;
+    private static final double BASE_RPM = 2800;     // The base RPM at min distance
+
+
 
     private ElapsedTime timer = new ElapsedTime();
 
@@ -125,33 +126,27 @@ public class other_helpers {
     }
 
     // --- Flywheel Shooter Utilities ---
-    public static class FlywheelShooter {
+
 
         // --- Linear Model Constants ---
         //
-        private static final double RPM_PER_METER = 200; // The slope of the line (how much RPM to add per meter)
-        private static final double FAR_MAX_RPM = 4200;
-
-
-        private static final double BASE_RPM = 3000;     // The base RPM at min distance
 
         /**
          * Get required flywheel RPM for a given shot distance (m) using a linear model.
          * A linear model is often more accurate than a simple physics model because
          * it can be tuned to account for real-world factors like air resistance and energy loss.
          */
-        public static double getRPMForDistance(double rangeMeters) {
+        public double getRPMForDistance(double rangeMeters) {
             if (rangeMeters <= 1) return BASE_RPM;
-            if (rangeMeters >= 3) return FAR_MAX_RPM;
-            return BASE_RPM + (rangeMeters * RPM_PER_METER);
+            if (rangeMeters <= 1.5) return BASE_RPM + 200;
+            if (rangeMeters <= 2) return BASE_RPM + 400;
+            if (rangeMeters <= 2.5) return BASE_RPM + 700;
+            if (rangeMeters <= 3.3) return BASE_RPM + 1200;
+            return BASE_RPM + 1500;
         }
 
-        /** Predict horizontal range (m) for a given flywheel RPM. */
-        public static double getDistanceForRPM(double rpm) {
-            //if (rpm <= BASE_RPM) return 0;
-            return (rpm - BASE_RPM) / RPM_PER_METER;
-        }
-    }
+
+
 
     public static double distanceToBlueGoal(double currentX, double currentY) {
         double deltaX = blueGoalX - currentX;
@@ -165,27 +160,13 @@ public class other_helpers {
     }
 
     public static double getHeadingErrorToBlueGoal(double currentX, double currentY, double currentHeading) {
-        double angleToGoal = Math.atan2(blueGoalY - currentY, blueGoalX - currentX);
-        return getNormalizedHeadingError(currentHeading, angleToGoal);
+        return Math.toDegrees(Math.atan2(blueGoalY - currentY, blueGoalX - currentX));
     }
 
     public static double getHeadingErrorToRedGoal(double currentX, double currentY, double currentHeading) {
-        double angleToGoal = Math.atan2(redGoalY - currentY, redGoalX - currentX);
-        return getNormalizedHeadingError(currentHeading, angleToGoal);
+        return Math.toDegrees(Math.atan2(redGoalY - currentY, redGoalX - currentX));
     }
-    private static double getNormalizedHeadingError(double currentHeading, double angleToGoal) {
-        double headingError = angleToGoal - currentHeading;
 
-        // Normalize the angle to be between -PI and PI
-        while (headingError <= -Math.PI) {
-            headingError += 2 * Math.PI;
-        }
-        while (headingError > Math.PI) {
-            headingError -= 2 * Math.PI;
-        }
-
-        return headingError;
-    }
 
     // Generic methods that select based on alliance color
     public static double distanceToGoal(double currentX, double currentY, String allianceColor) {
