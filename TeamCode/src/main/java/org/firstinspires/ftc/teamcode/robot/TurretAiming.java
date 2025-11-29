@@ -91,19 +91,43 @@ public class TurretAiming {
                 //goalHeadingError = other_helpers.getHeadingErrorToGoal(follower.getPose().getX(), follower.getPose().getY(), follower.getPose().getHeading(), myAllianceColor);
             }
 
-            // Set shooter velocity
-            if (goalDistance > .1 && goalDistance < 5) {
-                double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(goalDistance);
-                speed = Range.clip((targetRPM) * ticks_per_rev / 60, helpers.MIN_RPM * ticks_per_rev / 60, helpers.MAX_RPM * ticks_per_rev / 60);
-                robotMotors.setShooterVelocity(speed);
+            double updatedDistance = goalDistance;
+            // Close shooting
+            if (goalDistance < 1) {
+                updatedDistance = 1;
+                telemetry.addData("Short Distance:", goalDistance);
             }
+            else if (goalDistance < 2) {
+                updatedDistance = 2;
+                telemetry.addData("Mid Distance:", goalDistance);
+            }
+            else if (goalDistance < 2.5) {
+                updatedDistance = 2.25;
+                telemetry.addData("Mid 2 Distance:", goalDistance);
+            }
+            else if (goalDistance < 4) {
+                updatedDistance = 3.6;
+                telemetry.addData("Long Distance:", goalDistance);
+            }
+
+            // Old code in case we want it back -- Set shooter velocity
+            double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(updatedDistance);
+            speed = Range.clip((targetRPM) * ticks_per_rev / 60, helpers.MIN_RPM * ticks_per_rev / 60, helpers.MAX_RPM * ticks_per_rev / 60);
+            robotMotors.setShooterVelocity(speed);
+
+//            // Old code in case we want it back -- Set shooter velocity
+//            if (goalDistance > .1 && goalDistance < 5) {
+//                double targetRPM = other_helpers.FlywheelShooter.getRPMForDistance(goalDistance);
+//                speed = Range.clip((targetRPM) * ticks_per_rev / 60, helpers.MIN_RPM * ticks_per_rev / 60, helpers.MAX_RPM * ticks_per_rev / 60);
+//                robotMotors.setShooterVelocity(speed);
+//            }
 
             // Adjust turret using PID
             if (Math.abs(goalHeadingError) > 0.0) {
                 Servos.updateTurretWithPID(goalHeadingError);
             }
 
-            if (telemetry == null) {
+            if (telemetry != null) {
                 telemetry.addData("Target Acquired?", target_acquired);
                 telemetry.addData("RPM", speed * 60 / ticks_per_rev);
                 telemetry.addData("Goal Distance", goalDistance);

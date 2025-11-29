@@ -98,7 +98,7 @@ public class motors {
     }
 
     public void transferBackwards(){
-        setTransferPower(-0.15);
+        setTransferPower(-0.19);
     }
 
     public boolean setTransfer(boolean on){

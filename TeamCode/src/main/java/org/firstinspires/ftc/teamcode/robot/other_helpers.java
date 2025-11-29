@@ -16,9 +16,9 @@ public class other_helpers {
     public static int redGoalX = 132;
     public static int redGoalY = 136;
 
-    public static final double MAX_RPM = 4650;
+    public static final double MAX_RPM = 6000;
 
-    public static final double MIN_RPM = 3200;
+    public static final double MIN_RPM = 6000;
 
     private ElapsedTime timer = new ElapsedTime();
 
