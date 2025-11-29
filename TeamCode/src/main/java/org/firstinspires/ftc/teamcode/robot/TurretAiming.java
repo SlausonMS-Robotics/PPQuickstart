@@ -13,14 +13,9 @@ public class TurretAiming {
     private final servos Servos;
     private final motors robotMotors;
     private final Telemetry telemetry;
-    private final other_helpers headingAverage = new other_helpers();
-    private final other_helpers helpers = new other_helpers();
-    private final other_helpers distanceAverage = new other_helpers();
 
-    private final Timer targetTimer = new Timer();
     private final Timer llTimer = new Timer();
-
-    private boolean targetAcquired = false;
+    private static final int ticks_per_rev = 28;
 
     public TurretAiming(Follower follower, limelight3A limelight, servos Servos, motors robotMotors, Telemetry telemetry) {
         this.follower = follower;
@@ -29,69 +24,97 @@ public class TurretAiming {
         this.robotMotors = robotMotors;
         this.telemetry = telemetry;
 
-        headingAverage.initMovingAverage(2);
-        distanceAverage.initMovingAverage(2);
+        llTimer.resetTimer();
     }
 
     /**
-     * Main update loop for turret aiming.
-     * @param myAllianceColor The current alliance color ("blue" or "red").
-     * @param useOdometry If true, aims using only odometry. If false, uses Limelight with odometry fallback.
+     * Aims the turret using odometry data as the default.
+     * This should be called in the main loop for default behavior.
      */
-    public void update(String myAllianceColor, boolean useOdometry) {
-        double goalDistanceMeters;
-        double goalHeadingErrorDeg;
-        goalDistanceMeters = other_helpers.distanceToGoal(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
-        goalHeadingErrorDeg = other_helpers.getHeadingErrorToGoal(follower.getPose().getX(), follower.getPose().getY(), follower.getPose().getHeading(), myAllianceColor);
+    public void updateOdomAiming(String myAllianceColor) {
+        // This is now the default aiming method.
+        Servos.setLedColor(servos.LedColor.RED); // Default to red (no vision)
 
-        if (!useOdometry) {
-
-            // --- VISION AIMING WITH ODOMETRY FALLBACK ---
-            if (llTimer.getElapsedTime() >= 10) {
-                LLResult result = limelight.limelight.getLatestResult();
-                llTimer.resetTimer();
-
-                if (result.isValid()) {
-                    targetAcquired = true;
-                    Servos.setLedColor(servos.LedColor.GREEN);
-                    targetTimer.resetTimer();
-
-                    // Use vision data for distance and heading
-                    goalDistanceMeters = distanceAverage.updateAndGetAverage(result.getBotposeAvgDist());
-                    goalHeadingErrorDeg = headingAverage.updateAndGetAverage(result.getTx());
-
-                } else {
-
-
-                    if (targetTimer.getElapsedTime() >= 500) {
-                        targetAcquired = false;
-                        Servos.setLedColor(servos.LedColor.RED);
-                    }
-                }
-            }
+        // Set shooter speed based on odometry
+        double odomDistance = other_helpers.distanceToGoal(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
+        if (odomDistance > 0 && odomDistance < 5) {
+            double targetRPM = other_helpers.getRPMForDistance(odomDistance);
+            double speed = targetRPM * ticks_per_rev / 60;
+            robotMotors.setShooterVelocity(speed);
         }
 
-
-        // --- SHARED AIMING LOGIC ---
-        double targetRPM = helpers.getRPMForDistance(goalDistanceMeters);
-        // Set shooter velocity
-        if (goalDistanceMeters > 0.1 && goalDistanceMeters < 5) {
-
-            robotMotors.setShooterVelocity(targetRPM);
+        // Aim with odometry
+        double robotHeadingDeg = Math.toDegrees(follower.getPose().getHeading());
+        double odomHeadingErrorDeg = other_helpers.getHeadingErrorToGoal(follower.getPose().getX(), follower.getPose().getY(), robotHeadingDeg, myAllianceColor);
+        
+        if (Math.abs(odomHeadingErrorDeg) > 0.1) {
+            Servos.updateTurretWithPID(odomHeadingErrorDeg);
         }
-
-        // Adjust turret using PID
-        if (Math.abs(goalHeadingErrorDeg) > .25) { // Deadband in degrees
-            Servos.updateTurretWithPID(goalHeadingErrorDeg);
-        }
-
+        
         if (telemetry != null) {
-            telemetry.addData("Aiming Mode", (useOdometry ? "Odometry" : (targetAcquired ? "Vision" : "Odom Fallback")));
-            telemetry.addData("RPM", targetRPM);
-            telemetry.addData("Goal Distance", goalDistanceMeters);
-            telemetry.addData("Goal Heading Error", Math.toDegrees(goalHeadingErrorDeg));
+            telemetry.addData("AIMING MODE", "ODOMETRY (DEFAULT)");
+            telemetry.addData("Odom Heading Error", odomHeadingErrorDeg);
+        }
+        
+        updateTelemetry();
+    }
+    
+    /**
+     * Explicitly polls the Limelight and attempts to aim.
+     * Call this when you want to override odometry aiming with vision.
+     * @return true if a valid target was found and used for aiming, false otherwise.
+     */
+    public boolean updateLimelightAiming() {
+        if (llTimer.getElapsedTime() < 10) {
+            return false; // Throttle the polling
+        }
+        llTimer.resetTimer();
+
+        // Defensively check if the limelight object is null before using it.
+        LLResult result = null;
+        if (limelight != null) {
+            result = limelight.limelight.getLatestResult();
+        }
+
+        if (result != null && result.isValid()) {
+            // --- LIMELIGHT AIMING ---
+            Servos.setLedColor(servos.LedColor.GREEN);
+
+            double llGoalHeadingError = result.getTx();
+            double llGoalDist = result.getBotposeAvgDist();
+
+            // Set shooter velocity based on Limelight distance
+            if (llGoalDist > 0 && llGoalDist < 5) {
+                double targetRPM = other_helpers.getRPMForDistance(llGoalDist);
+                double speed = targetRPM * ticks_per_rev / 60;
+                robotMotors.setShooterVelocity(speed);
+            }
+
+            // Aim turret using Limelight heading
+            if (Math.abs(llGoalHeadingError) > 0.1) {
+                Servos.updateTurretWithPID(llGoalHeadingError);
+            }
+
+            if (telemetry != null) {
+                telemetry.addData("AIMING MODE", "LIMELIGHT");
+                telemetry.addData("LL Heading Error", llGoalHeadingError);
+                telemetry.addData("LL Distance", llGoalDist);
+            }
+            updateTelemetry();
+            return true; // Success
+        }
+        
+        // No valid target, so return false
+        return false;
+    }
+    
+    /**
+     * Private helper to update common telemetry data.
+     */
+    private void updateTelemetry() {
+        if (telemetry != null) {
+            telemetry.addData("Current Pose", follower.getPose());
             telemetry.update();
         }
     }
-
 }
