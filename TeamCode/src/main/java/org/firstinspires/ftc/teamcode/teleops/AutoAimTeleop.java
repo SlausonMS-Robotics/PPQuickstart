@@ -124,7 +124,7 @@ public class AutoAimTeleop extends OpMode {
         }
 
 
-        turretAimer.update(myAllianceColor, true);
+        turretAimer.updateOdomAiming(myAllianceColor);
         robotStateController.setRobotState(robotState);
         follower.update();
 

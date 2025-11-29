@@ -136,7 +136,7 @@ public class other_helpers {
          * A linear model is often more accurate than a simple physics model because
          * it can be tuned to account for real-world factors like air resistance and energy loss.
          */
-        public double getRPMForDistance(double rangeMeters) {
+        public static double getRPMForDistance(double rangeMeters) {
             if (rangeMeters <= 1) return BASE_RPM;
             if (rangeMeters <= 1.5) return BASE_RPM + 200;
             if (rangeMeters <= 2) return BASE_RPM + 400;

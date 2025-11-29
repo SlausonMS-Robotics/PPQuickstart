@@ -9,14 +9,22 @@ public class servos {
 
     // ---- Constants ----
 
-    public static final double TURRET_MIN_POS = .3;
-    public static final double TURRET_MAX_POS = .7;
+    // The physical angle limits of the turret in degrees. Adjust these to match your hardware.
+    public static final double TURRET_MIN_ANGLE_DEG = -60.0;
+    public static final double TURRET_MAX_ANGLE_DEG = 60.0;
+
+    // ---- Physical Conversion Constants ----
+    private static final double GEAR_RATIO = 86.0 / 42.0; // Turret Gear / Servo Gear
+    private static final double SERVO_DEGREES_RANGE = 1400.0; // Effective range of a 5-turn servo (5 * 280 deg)
+    private static final double TURRET_CENTER_POS = 0.5; // The raw servo position that corresponds to a 0-degree turret angle.
+
+    // SERVO_UNITS_PER_DEGREE: The scaling factor to convert degrees of turret rotation to servo units.
+    private static final double SERVO_UNITS_PER_DEGREE = GEAR_RATIO / SERVO_DEGREES_RANGE;
 
     // ---- PID Constants ----
-    // NOTE: These will need to be tuned for your specific robot
-    public static final double TURRET_P = 0.9;
+    public static final double TURRET_P = 0.1;
     public static final double TURRET_I = 0.0;
-    public static final double TURRET_D = 0.3;
+    public static final double TURRET_D = 0.0;
 
     // ---- PID Controller ----
     private other_helpers pidController = new other_helpers();
@@ -38,13 +46,15 @@ public class servos {
 
         ledServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
 
-        // Center the turret on initialization
-        //setTurretServoPos(0.5);
-
-        // Initialize the PID controller with our constants
+        setTurretAngleDeg(0.0);
         pidController.initPID(TURRET_P, TURRET_I, TURRET_D);
     }
 
+    /**
+     * Sets the color of the goBILDA RGB LED status indicator.
+     * This is now an INSTANCE method.
+     * @param color The desired color from the LedColor enum.
+     */
     public void setLedColor(LedColor color) {
         switch (color) {
             case GREEN:
@@ -64,13 +74,13 @@ public class servos {
     }
 
     /**
-     * Manually moves the turret based on a power value.
-     * @param increment the distance to move the turret in one call of the method.
+     * Manually moves the turret by a given number of degrees.
+     * @param angleIncrementDeg The number of degrees to move the turret.
      */
-    public void moveTurretManually(double increment) {
-        double currentPos = getTurretServoPos();
-        double newPos = currentPos + increment;
-        setTurretServoPos(newPos);
+    public void moveTurretManually(double angleIncrementDeg) {
+        double currentAngle = getTurretAngleDeg();
+        double newAngle = currentAngle + angleIncrementDeg;
+        setTurretAngleDeg(newAngle);
     }
 
     public void setIntakeServos(boolean on){
@@ -86,25 +96,42 @@ public class servos {
 
     /**
      * Updates the turret position using a PID controller to minimize heading error.
-     * @param headingErrorDeg The error in radians between the current and target heading.
+     * @param headingErrorDeg The error in degrees between the current and target heading.
      */
     public void updateTurretWithPID(double headingErrorDeg) {
-        double pidCorrection = pidController.updatePID(headingErrorDeg, 0);
-        double currentPos = getTurretServoPos();
-        double newPos = currentPos + pidCorrection;
-        setTurretServoPos(newPos);
+        double pidCorrectionDeg = pidController.updatePID(headingErrorDeg, 0);
+        double currentAngleDeg = getTurretAngleDeg();
+        double newAngleDeg = currentAngleDeg + pidCorrectionDeg;
+        setTurretAngleDeg(newAngleDeg);
     }
 
-    public void setTurretServoPos(double pos) {
-        turretServo.setPosition(Range.clip(pos, TURRET_MIN_POS, TURRET_MAX_POS));
+    /**
+     * Sets the turret to a specific angle in degrees, respecting the physical limits.
+     * @param angleDeg The desired angle for the turret.
+     */
+    public void setTurretAngleDeg(double angleDeg) {
+        double clippedAngle = Range.clip(angleDeg, TURRET_MIN_ANGLE_DEG, TURRET_MAX_ANGLE_DEG);
+        double pos = getServoPosFromAngle(clippedAngle);
+        turretServo.setPosition(pos);
     }
 
-    public double getTurretServoPos() {
-        return turretServo.getPosition();
+    private double getServoPosFromAngle(double angleDeg) {
+        return TURRET_CENTER_POS + (angleDeg * SERVO_UNITS_PER_DEGREE);
     }
 
+    public double getTurretAngleDeg() {
+        double pos = turretServo.getPosition();
+        return (pos - TURRET_CENTER_POS) / SERVO_UNITS_PER_DEGREE;
+    }
 
-
-
-
+    public double getFieldCentricTurretHeading(double robotHeadingDeg) {
+        double turretFieldHeading = robotHeadingDeg + getTurretAngleDeg();
+        while (turretFieldHeading <= -180) {
+            turretFieldHeading += 360;
+        }
+        while (turretFieldHeading > 180) {
+            turretFieldHeading -= 360;
+        }
+        return turretFieldHeading;
+    }
 }
