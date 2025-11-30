@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.robot;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.util.Timer;
-import com.qualcomm.hardware.limelightvision.LLResult;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -23,6 +22,13 @@ public class TurretAiming {
     private static final int redGoalX = 132;
     private static final int redGoalY = 136;
 
+    // ---- Polynomial RPM Coefficients ----
+    // These coefficients define the quadratic equation: RPM = A*x^2 + B*x + C
+    // where x is the distance in meters. Derived from the new stepped data.
+    private static final double POLY_A = 200.0;
+    private static final double POLY_B = -100.0;
+    private static final double POLY_C = 2700.0;
+
     public TurretAiming(Follower follower, limelight3A limelight, servos Servos, motors robotMotors, Telemetry telemetry) {
         this.follower = follower;
         this.limelight = limelight;
@@ -39,12 +45,12 @@ public class TurretAiming {
      */
     public void updateOdomAiming(String myAllianceColor) {
         // This is now the default aiming method.
-        Servos.setLedColor(servos.LedColor.RED); // Default to red (no vision)
+         // Default to red (no vision)
 
         // Set shooter speed based on odometry
-        double odomDistance = distanceToGoalInches(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
-        if (odomDistance > 0 && odomDistance < 5) {
-            double targetRPM = FlywheelShooter.getRPMForDistance(odomDistance);
+        double odomDistanceMeters = .0254 * distanceToGoalInches(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
+        if (odomDistanceMeters > .05 && odomDistanceMeters < 5) {
+            double targetRPM = getRPMForDistancePolyMeters(odomDistanceMeters);
             double speed = targetRPM * ticks_per_rev / 60;
             robotMotors.setShooterVelocity(speed);
         }
@@ -58,9 +64,9 @@ public class TurretAiming {
         Servos.updateTurretWithPID(targetFieldHeadingDeg, robotHeadingDeg);
         
         if (telemetry != null) {
-            telemetry.addData("AIMING MODE", "ODOMETRY (DEFAULT)");
-            telemetry.addData("Target Field Heading", "%.2f", targetFieldHeadingDeg);
-            telemetry.addData("Current Field Heading", "%.2f", robotHeadingDeg);
+           // telemetry.addData("AIMING MODE", "ODOMETRY (DEFAULT)");
+            //telemetry.addData("Target Field Heading", "%.2f", targetFieldHeadingDeg);
+            //telemetry.addData("Current Field Heading", "%.2f", robotHeadingDeg);
             }
         
         updateTelemetry();
@@ -70,48 +76,7 @@ public class TurretAiming {
      * Explicitly polls the Limelight and attempts to aim.
      * @return true if a valid target was found and used for aiming, false otherwise.
      */
-    public boolean updateLimelightAiming() {
-        if (llTimer.getElapsedTime() < 10) {
-            return false; // Throttle the polling
-        }
-        llTimer.resetTimer();
 
-        LLResult result = null;
-        if (limelight != null) {
-            result = limelight.limelight.getLatestResult();
-        }
-
-        if (result != null && result.isValid()) {
-            Servos.setLedColor(servos.LedColor.GREEN);
-
-            double llGoalHeadingError = result.getTx();
-            double llGoalDist = result.getBotposeAvgDist();
-
-            if (llGoalDist > 0 && llGoalDist < 5) {
-                double targetRPM = FlywheelShooter.getRPMForDistance(llGoalDist);
-                double speed = targetRPM * ticks_per_rev / 60;
-                robotMotors.setShooterVelocity(speed);
-            }
-
-            double robotHeadingDeg = Math.toDegrees(follower.getPose().getHeading());
-            double currentTurretFieldHeading = Servos.getFieldCentricTurretHeading(robotHeadingDeg);
-            double targetFieldHeading = currentTurretFieldHeading - llGoalHeadingError;
-
-            // Let the PID controller handle aiming. It will do nothing if the error is tiny.
-            Servos.updateTurretWithPID(targetFieldHeading, robotHeadingDeg);
-
-            if (telemetry != null) {
-                telemetry.addData("AIMING MODE", "LIMELIGHT");
-                telemetry.addData("Target Field Heading", "%.2f", targetFieldHeading);
-                telemetry.addData("LL Distance", llGoalDist);
-            }
-            updateTelemetry();
-            return true; // Success
-        }
-        
-        return false;
-    }
-    
     private void updateTelemetry() {
         if (telemetry != null) {
             telemetry.addData("Current Pose", follower.getPose());
@@ -119,19 +84,25 @@ public class TurretAiming {
         }
     }
 
-    // ---- Aiming Logic Moved from other_helpers ----
-
-    private static class FlywheelShooter {
-        private static final double RPM_PER_METER = 200;
-        private static final double MAX_RPM = 4200;
-        private static final double BASE_RPM = 3400;
-
-        public static double getRPMForDistance(double rangeMeters) {
-            if (rangeMeters <= 2) return BASE_RPM;
-            if (rangeMeters >= 3) return MAX_RPM;
-            return BASE_RPM + (rangeMeters * RPM_PER_METER);
-        }
+    /**
+     * Calculates flywheel RPM using a quadratic polynomial for smooth, continuous speed scaling.
+     * @param rangeMeters The distance to the target in meters.
+     * @return The calculated RPM for the flywheel.
+     */
+    public static double getRPMForDistancePolyMeters(double rangeMeters) {
+        if (rangeMeters <= 1) return POLY_A + POLY_B + POLY_C;
+        return POLY_A * Math.pow(rangeMeters, 2) + POLY_B * rangeMeters + POLY_C;
     }
+
+    public static double getRPMForDistanceStepMeters(double rangeMeters) {
+        if (rangeMeters <= 1.0) return 2800; // Base close-range shot
+        if (rangeMeters <= 1.5) return 3000; // +200
+        if (rangeMeters <= 2.0) return 3300; // +300
+        if (rangeMeters <= 2.5) return 3700; // +400
+        if (rangeMeters <= 3.0) return 4200; // +500
+        return 4500; // Max power shot for anything over 3m
+    }
+   
 
     private double distanceToBlueGoal(double currentX, double currentY) {
         double deltaX = blueGoalX - currentX;

@@ -11,4 +11,7 @@ public class PoseStorage {
 
     // The alliance color, which can be set in Autonomous and read in TeleOp
     public static String allianceColor = "blue";
+
+    // A flag to indicate if an Autonomous OpMode has been run
+    public static boolean autoFinished = false;
 }
