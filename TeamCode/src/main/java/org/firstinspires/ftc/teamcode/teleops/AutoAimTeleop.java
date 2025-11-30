@@ -48,7 +48,7 @@ public class AutoAimTeleop extends OpMode {
     public void init() {
         // Initialize all our robot hardware
         robotMotors.init(hardwareMap); //initializes all motors
-        Servos.init(hardwareMap); // This now initializes the turret servo and PID
+        Servos.init(hardwareMap, telemetry); // This now initializes the turret servo and PID
 
         follower = Constants.createFollower(hardwareMap);
 
@@ -59,14 +59,14 @@ public class AutoAimTeleop extends OpMode {
         llPoseTimer = new Timer();
         buttonDebounceTimer = new Timer();
         
-        myAllianceColor = PoseStorage.allianceColor;
+        //myAllianceColor = PoseStorage.allianceColor;
         if("blue".equals(myAllianceColor)){
-            limelight.init(hardwareMap,0, telemetry);
+            //limelight.init(hardwareMap,0, telemetry);
             startPose = new Pose(44,9,Math.toRadians(90));
 
         }
         else {
-            limelight.init(hardwareMap,1, telemetry);
+            //limelight.init(hardwareMap,1, telemetry);
             startPose = new Pose(72,9,Math.toRadians(90));
         }
         follower.setStartingPose(startPose);
@@ -117,15 +117,15 @@ public class AutoAimTeleop extends OpMode {
         double scalar;
         if (gamepad1.left_trigger > .2) { //driver
             scalar = .5; //sets speed of change -> lower = slower
-            follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 1), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar, 1), false);
+
         } else {
             scalar = 1.0; //sets speed of change -> lower = slower
-            follower.setTeleOpDrive(Math.pow(-gamepad1.left_stick_y * scalar, 1), Math.pow(-gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar, 1), false);
         }
+        follower.setTeleOpDrive(Math.pow(gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.left_stick_y * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar, 1), false);
 
 
         turretAimer.updateOdomAiming(myAllianceColor);
-        robotStateController.setRobotState(robotState);
+        robotStateController.setRobotState(robotState, Servos, robotMotors);
         follower.update();
 
 
