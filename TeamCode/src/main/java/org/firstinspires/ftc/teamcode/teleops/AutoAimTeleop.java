@@ -34,8 +34,6 @@ public class AutoAimTeleop extends OpMode {
     private TurretAiming turretAimer;
     private int robotState = 0;
     private int previousRobotState = 0;
-    private int intakeState = 0;
-    private int transferState = 0;
     private Pose startPose;
 
 
@@ -95,7 +93,7 @@ public class AutoAimTeleop extends OpMode {
     public void loop() {
 
 
-        if (gamepad2.right_trigger > .2) { //transfer on/off (shoot)
+        if (gamepad1.right_trigger > .2) { //transfer on/off (shoot)
             if (robotState != 2) previousRobotState = robotState;
             robotState = 2;
 
@@ -105,12 +103,17 @@ public class AutoAimTeleop extends OpMode {
         // Gamepad button logic for adjustments and intake
         if (buttonDebounceTimer.getElapsedTime() >= 350) { //debounce all buttons
 
-            if (gamepad2.a || gamepad2.y) { //intake on/off
+            if (gamepad1.a || gamepad1.y) { //intake on/off
                 if(robotState == 0) robotState = 1;
                 else robotState = 0;
                 buttonDebounceTimer.resetTimer();
 
             }
+            if(gamepad1.x){
+                Servos.setTurretServoPos(.5); //reset turret in case of drift
+                buttonDebounceTimer.resetTimer();
+            }
+
         }
 
         // Drive code
