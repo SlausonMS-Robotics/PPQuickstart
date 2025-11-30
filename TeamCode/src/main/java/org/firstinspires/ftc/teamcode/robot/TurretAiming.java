@@ -17,6 +17,12 @@ public class TurretAiming {
     private final Timer llTimer = new Timer();
     private static final int ticks_per_rev = 28;
 
+    // ---- Aiming Constants (moved from other_helpers) ----
+    private static final int blueGoalX = 12;
+    private static final int blueGoalY = 136;
+    private static final int redGoalX = 132;
+    private static final int redGoalY = 136;
+
     public TurretAiming(Follower follower, limelight3A limelight, servos Servos, motors robotMotors, Telemetry telemetry) {
         this.follower = follower;
         this.limelight = limelight;
@@ -36,32 +42,32 @@ public class TurretAiming {
         Servos.setLedColor(servos.LedColor.RED); // Default to red (no vision)
 
         // Set shooter speed based on odometry
-        double odomDistance = other_helpers.distanceToGoal(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
+        double odomDistance = distanceToGoalInches(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
         if (odomDistance > 0 && odomDistance < 5) {
-            double targetRPM = other_helpers.getRPMForDistance(odomDistance);
+            double targetRPM = FlywheelShooter.getRPMForDistance(odomDistance);
             double speed = targetRPM * ticks_per_rev / 60;
             robotMotors.setShooterVelocity(speed);
         }
 
         // Aim with odometry
         double robotHeadingDeg = Math.toDegrees(follower.getPose().getHeading());
-        double odomHeadingErrorDeg = other_helpers.getHeadingErrorToGoal(follower.getPose().getX(), follower.getPose().getY(), robotHeadingDeg, myAllianceColor);
+        // Directly get the absolute field heading of the goal.
+        double targetFieldHeadingDeg = getFieldHeadingToGoal(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
         
-        if (Math.abs(odomHeadingErrorDeg) > 0.1) {
-            Servos.updateTurretWithPID(odomHeadingErrorDeg);
-        }
+        // Let the PID controller handle aiming. It will do nothing if the error is tiny.
+        Servos.updateTurretWithPID(targetFieldHeadingDeg, robotHeadingDeg);
         
         if (telemetry != null) {
             telemetry.addData("AIMING MODE", "ODOMETRY (DEFAULT)");
-            telemetry.addData("Odom Heading Error", odomHeadingErrorDeg);
-        }
+            telemetry.addData("Target Field Heading", "%.2f", targetFieldHeadingDeg);
+            telemetry.addData("Current Field Heading", "%.2f", robotHeadingDeg);
+            }
         
         updateTelemetry();
     }
     
     /**
      * Explicitly polls the Limelight and attempts to aim.
-     * Call this when you want to override odometry aiming with vision.
      * @return true if a valid target was found and used for aiming, false otherwise.
      */
     public boolean updateLimelightAiming() {
@@ -70,51 +76,97 @@ public class TurretAiming {
         }
         llTimer.resetTimer();
 
-        // Defensively check if the limelight object is null before using it.
         LLResult result = null;
         if (limelight != null) {
             result = limelight.limelight.getLatestResult();
         }
 
         if (result != null && result.isValid()) {
-            // --- LIMELIGHT AIMING ---
             Servos.setLedColor(servos.LedColor.GREEN);
 
             double llGoalHeadingError = result.getTx();
             double llGoalDist = result.getBotposeAvgDist();
 
-            // Set shooter velocity based on Limelight distance
             if (llGoalDist > 0 && llGoalDist < 5) {
-                double targetRPM = other_helpers.getRPMForDistance(llGoalDist);
+                double targetRPM = FlywheelShooter.getRPMForDistance(llGoalDist);
                 double speed = targetRPM * ticks_per_rev / 60;
                 robotMotors.setShooterVelocity(speed);
             }
 
-            // Aim turret using Limelight heading
-            if (Math.abs(llGoalHeadingError) > 0.1) {
-                Servos.updateTurretWithPID(llGoalHeadingError);
-            }
+            double robotHeadingDeg = Math.toDegrees(follower.getPose().getHeading());
+            double currentTurretFieldHeading = Servos.getFieldCentricTurretHeading(robotHeadingDeg);
+            double targetFieldHeading = currentTurretFieldHeading - llGoalHeadingError;
+
+            // Let the PID controller handle aiming. It will do nothing if the error is tiny.
+            Servos.updateTurretWithPID(targetFieldHeading, robotHeadingDeg);
 
             if (telemetry != null) {
                 telemetry.addData("AIMING MODE", "LIMELIGHT");
-                telemetry.addData("LL Heading Error", llGoalHeadingError);
+                telemetry.addData("Target Field Heading", "%.2f", targetFieldHeading);
                 telemetry.addData("LL Distance", llGoalDist);
             }
             updateTelemetry();
             return true; // Success
         }
         
-        // No valid target, so return false
         return false;
     }
     
-    /**
-     * Private helper to update common telemetry data.
-     */
     private void updateTelemetry() {
         if (telemetry != null) {
             telemetry.addData("Current Pose", follower.getPose());
             telemetry.update();
+        }
+    }
+
+    // ---- Aiming Logic Moved from other_helpers ----
+
+    private static class FlywheelShooter {
+        private static final double RPM_PER_METER = 200;
+        private static final double MAX_RPM = 4200;
+        private static final double BASE_RPM = 3400;
+
+        public static double getRPMForDistance(double rangeMeters) {
+            if (rangeMeters <= 2) return BASE_RPM;
+            if (rangeMeters >= 3) return MAX_RPM;
+            return BASE_RPM + (rangeMeters * RPM_PER_METER);
+        }
+    }
+
+    private double distanceToBlueGoal(double currentX, double currentY) {
+        double deltaX = blueGoalX - currentX;
+        double deltaY = blueGoalY - currentY;
+        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    }
+    
+    private double distanceToRedGoal(double currentX, double currentY) {
+        double deltaX = redGoalX - currentX;
+        double deltaY = redGoalY - currentY;
+        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    }
+
+    // These methods now return the absolute field heading to the goal.
+    private double getFieldHeadingToBlueGoal(double currentX, double currentY) {
+        return Math.toDegrees(Math.atan2(blueGoalY - currentY, blueGoalX - currentX));
+    }
+
+    private double getFieldHeadingToRedGoal(double currentX, double currentY) {
+        return Math.toDegrees(Math.atan2(redGoalY - currentY, redGoalX - currentX));
+    }
+    
+    private double distanceToGoalInches(double currentX, double currentY, String allianceColor) {
+        if ("blue".equals(allianceColor)) {
+            return distanceToBlueGoal(currentX, currentY);
+        } else {
+            return distanceToRedGoal(currentX, currentY);
+        }
+    }
+
+    private double getFieldHeadingToGoal(double currentX, double currentY, String allianceColor) {
+        if ("blue".equals(allianceColor)) {
+            return getFieldHeadingToBlueGoal(currentX, currentY);
+        } else {
+            return getFieldHeadingToRedGoal(currentX, currentY);
         }
     }
 }

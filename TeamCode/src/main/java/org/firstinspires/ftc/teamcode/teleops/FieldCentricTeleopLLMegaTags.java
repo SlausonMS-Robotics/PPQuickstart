@@ -45,7 +45,7 @@ public class FieldCentricTeleopLLMegaTags extends OpMode {
     Follower follower;
     private double turretPosition = 0;
     private boolean use_PP = false;
-    private final Pose startPose = new Pose(0,0,0);
+    private final Pose startPose = new Pose(0,0,Math.toRadians(90));
 
     /** This method is call once when init is played, it initializes the follower **/
     @Override
@@ -54,7 +54,7 @@ public class FieldCentricTeleopLLMegaTags extends OpMode {
             follower = Constants.createFollower(hardwareMap);
             follower.setStartingPose(startPose);
         }
-        turretServo.init(hardwareMap);
+        turretServo.init(hardwareMap, telemetry);
         shooter.init(hardwareMap);
         limelight.init(hardwareMap,0, telemetry);
 
@@ -122,7 +122,7 @@ public class FieldCentricTeleopLLMegaTags extends OpMode {
             double pidOutput = headingPid.updatePID(ll_goal_heading, 0); // Pass current heading and target (0)
             turretPosition -= pidOutput;
             
-            turretServo.setTurretServoPos(turretPosition);
+            //turretServo.setTurretServoPos(turretPosition);
         }
 
         telemetry.update();

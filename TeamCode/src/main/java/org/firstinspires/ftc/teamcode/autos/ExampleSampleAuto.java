@@ -208,7 +208,7 @@ public class ExampleSampleAuto extends OpMode {
         pathTimer = new Timer();
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startPose);
-        robotservo.init(hardwareMap);
+        robotservo.init(hardwareMap,telemetry);
         limelight.init(hardwareMap,5, telemetry);
         buildPaths();
     }

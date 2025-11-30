@@ -41,7 +41,7 @@ public class Blue_12_Rear_1 extends OpMode {
         robotMotors = new motors();
         robotMotors.init(hardwareMap);
         Servos = new servos();
-        Servos.init(hardwareMap);
+        Servos.init(hardwareMap, telemetry);
         limelight = new limelight3A();
         limelight.init(hardwareMap, 0, telemetry);
 
@@ -71,7 +71,7 @@ public class Blue_12_Rear_1 extends OpMode {
     @Override
     public void loop() {
         follower.update(); // Update Pedro Pathing
-        turretAimer.update(myAllianceColor, false); // Update turret aim and shooter speed continuously
+        //turretAimer.update(myAllianceColor, false); // Update turret aim and shooter speed continuously
         autonomousPathUpdate(); // Update autonomous state machine
 
         // Log values to Panels and Driver Station
@@ -89,8 +89,8 @@ public class Blue_12_Rear_1 extends OpMode {
                     robotMotors.shoot();
                 }
                 if(pathTimer.getElapsedTime() > 2000){
-                    robotMotors.stopTransfer();
-                    robotMotors.toggleIntake();
+                    //robotMotors.stopTransfer();
+                    //robotMotors.toggleIntake();
                     follower.followPath(paths.Path1);
                     setPathState(1);
 
