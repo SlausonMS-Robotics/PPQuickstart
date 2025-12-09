@@ -11,61 +11,56 @@ import org.firstinspires.ftc.teamcode.robot.PoseStorage;
 import org.firstinspires.ftc.teamcode.robot.TurretAiming;
 import org.firstinspires.ftc.teamcode.robot.limelight3A;
 import org.firstinspires.ftc.teamcode.robot.motors;
+import org.firstinspires.ftc.teamcode.robot.sensors;
 import org.firstinspires.ftc.teamcode.robot.servos;
 import org.firstinspires.ftc.teamcode.robot.states;
 
-/**
- * This is an example TeleOp for testing out the 2360 robot. It'll need to be updated to allow for
- * targeting other AprilTags
- */
 @TeleOp(name = "Auto Aim Teleop", group = "23609")
 public class AutoAimTeleop extends OpMode {
 
     private String myAllianceColor = "blue";
 
-    private Timer llPoseTimer, buttonDebounceTimer;
-    motors robotMotors = new motors(); // Single object for all motors
+    private Timer buttonDebounceTimer;
+    motors robotMotors = new motors();
     limelight3A limelight = new limelight3A();
     servos Servos = new servos();
-
     states robotStateController = new states();
-
-
     private TurretAiming turretAimer;
-    private int robotState = 0;
-    private int previousRobotState = 0;
-    private Pose startPose;
 
+    private sensors mySensors;
+    private int robotState = 0;
+    private boolean useOdomTracking = true;
+    private int previousRobotState = 0;
 
     Follower follower;
 
-
-
-    /** This method is call once when init is played, it initializes the follower **/
     @Override
     public void init() {
-        // Initialize all our robot hardware
-        robotMotors.init(hardwareMap); //initializes all motors
-        Servos.init(hardwareMap, telemetry); // This now initializes the turret servo and PID
-
+        robotMotors.init(hardwareMap);
+        //mySensors.init(hardwareMap);
+        Servos.init(hardwareMap, telemetry);
         follower = Constants.createFollower(hardwareMap);
-
-
-        // Instantiate our new reusable classes
         turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
+        limelight.init(hardwareMap, 3, telemetry, Servos, follower);
+        limelight.pollLimelight();
 
-        llPoseTimer = new Timer();
+
+
+
         buttonDebounceTimer = new Timer();
-        
-        //myAllianceColor = PoseStorage.allianceColor;
-        if("blue".equals(myAllianceColor)){
-            //limelight.init(hardwareMap,0, telemetry);
-            startPose = new Pose(44,9,Math.toRadians(90));
 
-        }
-        else {
-            //limelight.init(hardwareMap,1, telemetry);
-            startPose = new Pose(72,9,Math.toRadians(90));
+        Pose startPose;
+        if (PoseStorage.autoFinished) {
+            startPose = PoseStorage.currentPose;
+            myAllianceColor = PoseStorage.allianceColor;
+        } else {
+            if("blue".equals(myAllianceColor)){
+                startPose = new Pose(43.5,9,Math.toRadians(90));
+                PoseStorage.allianceColor = "blue";
+            } else {
+                startPose = new Pose(100.5,9,Math.toRadians(90));
+                PoseStorage.allianceColor = "red";
+            }
         }
         follower.setStartingPose(startPose);
         telemetry.addData("Alliance Color", myAllianceColor);
@@ -73,72 +68,85 @@ public class AutoAimTeleop extends OpMode {
         telemetry.update();
     }
 
-    /** This method is called continuously after Init while waiting to be started. **/
     @Override
-    public void init_loop() {
+    public void init_loop() {}
 
-    }
-
-    /** This method is called once at the start of the OpMode. **/
     @Override
     public void start() {
-
-            follower.startTeleopDrive(true);
-            llPoseTimer.resetTimer();
-
+        follower.startTeleopDrive(true);
     }
 
-    /** This is the main loop of the opmode and runs continuously after play **/
     @Override
     public void loop() {
-
-
-        if (gamepad1.right_trigger > .2) { //transfer on/off (shoot)
-            if (robotState != 2) previousRobotState = robotState;
+        // Handle state changes for shooting and intake
+        if (gamepad1.right_trigger > .2) {
             robotState = 2;
-
+        } else {
+            robotState = previousRobotState;
         }
-        else robotState = previousRobotState;
 
-        // Gamepad button logic for adjustments and intake
-        if (buttonDebounceTimer.getElapsedTime() >= 350) { //debounce all buttons
+        double scalar = (gamepad1.left_trigger > .2) ? 0.5 : 1.0;
 
-            if (gamepad1.a || gamepad1.y) { //intake on/off
+        if (buttonDebounceTimer.getElapsedTime() >= 500) {
+            if (gamepad1.y) {
                 if(robotState == 0) robotState = 1;
                 else robotState = 0;
                 buttonDebounceTimer.resetTimer();
-
             }
             if(gamepad1.x){
-                Servos.setTurretServoPos(.5); //reset turret in case of drift
+                //turretAimer.updatePoseFromLimelight();
+                //telemetry.addData("IMU Yaw", mySensors.getImuYawDeg());
+                robotMotors.setShooterVelocity(robotMotors.getShooterVelocity(6000));
                 buttonDebounceTimer.resetTimer();
             }
-
+            if(gamepad1.b){
+                //turretAimer.updatePoseFromLimelight();
+                //telemetry.addData("IMU Yaw", mySensors.getImuYawDeg());
+                robotMotors.setShooterVelocity(robotMotors.getShooterVelocity(3000));
+                buttonDebounceTimer.resetTimer();
+            }
+            if(gamepad1.a){
+                //turretAimer.updatePoseFromLimelight();
+                //telemetry.addData("IMU Yaw", mySensors.getImuYawDeg());
+                robotMotors.setShooterVelocity(robotMotors.getShooterVelocity(2650));
+                buttonDebounceTimer.resetTimer();
+            }
         }
+        if (robotState != 2) previousRobotState = robotState;
+
+        if (buttonDebounceTimer.getElapsedTime() >= 150) {
+            if (gamepad1.right_bumper){
+                Servos.incrementTurretInDegrees(-5 * scalar);
+                buttonDebounceTimer.resetTimer();
+            }
+            if (gamepad1.left_bumper){
+                Servos.incrementTurretInDegrees(5 * scalar);
+                buttonDebounceTimer.resetTimer();
+            }
+        }
+
+
+
+        if (useOdomTracking) {
+           // turretAimer.updateOdomAiming(myAllianceColor);
+        }
+
+
 
         // Drive code
-        double scalar;
-        if (gamepad1.left_trigger > .2) { //driver
-            scalar = .5; //sets speed of change -> lower = slower
 
-        } else {
-            scalar = 1.0; //sets speed of change -> lower = slower
-        }
-        follower.setTeleOpDrive(Math.pow(gamepad1.left_stick_x * scalar, 1), Math.pow(-gamepad1.left_stick_y * scalar, 1), Math.pow(-gamepad1.right_stick_x * scalar, 1), false);
+        follower.setTeleOpDrive(
+            Math.pow(gamepad1.left_stick_x * scalar, 1),
+            Math.pow(-gamepad1.left_stick_y * scalar, 1),
+            Math.pow(-gamepad1.right_stick_x * scalar, 1),
+            false);
 
-
-        turretAimer.updateOdomAiming(myAllianceColor);
         robotStateController.setRobotState(robotState, Servos, robotMotors);
+        telemetry.addData("Bot Pose", follower.getPose());
         follower.update();
-
-
-
-
-
+        telemetry.update();
     }
 
-    /** We do not use this because everything automatically should disable **/
     @Override
-    public void stop() {
-    }
+    public void stop() {}
 }

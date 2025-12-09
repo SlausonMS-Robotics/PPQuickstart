@@ -3,17 +3,21 @@ package org.firstinspires.ftc.teamcode.robot;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.OpticalDistanceSensor;
 
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class sensors {
 
     private NormalizedColorSensor colorSensor;
     private AnalogInput analogServoSensor;
+
+    private IMU imu;
 
 
     /**
@@ -22,6 +26,7 @@ public class sensors {
     public void init(HardwareMap hardwareMap) {
         colorSensor = hardwareMap.get(NormalizedColorSensor.class, "i2c2");
         analogServoSensor = hardwareMap.get(AnalogInput.class, "analog0");
+        imu = hardwareMap.get(IMU.class, "imu");
     }
 
     /**
@@ -49,6 +54,11 @@ public class sensors {
         double light = ((OpticalDistanceSensor) colorSensor).getLightDetected();
 
         return new double[] {color.red, color.green, color.blue, light};
+    }
+
+    public double getImuYawDeg() {
+        if (imu == null) return 0;
+        return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
     }
 
     /**
