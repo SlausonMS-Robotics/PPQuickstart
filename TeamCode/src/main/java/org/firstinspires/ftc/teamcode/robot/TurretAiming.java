@@ -13,6 +13,7 @@ public class TurretAiming {
     private final servos Servos;
     private final motors robotMotors;
     private final Telemetry telemetry;
+    private final other_helpers movingAverage;
 
     private final Timer llTimer = new Timer();
     private static final int ticks_per_rev = 28;
@@ -32,14 +33,16 @@ public class TurretAiming {
     private static final double POLY_A = 140;
     private static final double POLY_B = 100;
     private static final double POLY_C = 2300;
+    private double previousHeadingError = 0;
 
-    public TurretAiming(Follower follower, limelight3A limelight, servos Servos, motors robotMotors, Telemetry telemetry) {
+    public TurretAiming(Follower follower, limelight3A limelight, servos Servos, motors robotMotors, Telemetry telemetry, other_helpers helpers) {
         this.follower = follower;
         this.limelight = limelight;
         this.Servos = Servos;
         this.robotMotors = robotMotors;
         this.telemetry = telemetry;
-
+        this.movingAverage = helpers;
+        movingAverage.initMovingAverage(5);
         llTimer.resetTimer();
     }
 
@@ -121,6 +124,35 @@ public class TurretAiming {
         
         Servos.setLedColor(servos.LedColor.RED);
         return false;
+    }
+
+    public boolean llAim(boolean clear) {
+        if (limelight == null || llTimer.getElapsedTime() < 20) {
+            return false;
+        }
+        llTimer.resetTimer();
+        if (clear) movingAverage.clearReadings();
+        if (limelight.pollLimelight()) {
+            if(!limelight.result.isValid()) return false;
+            double llGoalHeadingError = limelight.result.getTx();
+            if (Math.abs(llGoalHeadingError) <= .1) return false;
+            if (limelight.getLLAvgDist() <= .2 || limelight.getLLAvgDist() >= 4) return false;
+            double avgHeadingError = movingAverage.updateAndGetAverage(llGoalHeadingError);
+            if (Math.abs(avgHeadingError) < 1 )
+                Servos.setLedColor(servos.LedColor.YELLOW);
+            else if (Math.abs(avgHeadingError) < .5)
+                Servos.setLedColor(servos.LedColor.GREEN);
+            else Servos.setLedColor(servos.LedColor.RED);
+            Servos.updateTurretWithPID(0, avgHeadingError);
+
+            if (telemetry != null) {
+                telemetry.addData("AIMING MODE", "LIMELIGHT");
+            }
+            return true;
+        }
+        else return false;
+
+
     }
 
     /**
