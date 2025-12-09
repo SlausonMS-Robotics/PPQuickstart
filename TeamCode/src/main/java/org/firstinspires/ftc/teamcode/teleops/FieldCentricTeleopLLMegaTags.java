@@ -56,7 +56,7 @@ public class FieldCentricTeleopLLMegaTags extends OpMode {
         }
         turretServo.init(hardwareMap, telemetry);
         shooter.init(hardwareMap);
-        limelight.init(hardwareMap,0, telemetry);
+        //limelight.init(hardwareMap,0, telemetry);
 
         headingPid.initPID(SERVO_P, SERVO_I, SERVO_D);
         headingAverage.initMovingAverage(MOVING_AVERAGE_SIZE);

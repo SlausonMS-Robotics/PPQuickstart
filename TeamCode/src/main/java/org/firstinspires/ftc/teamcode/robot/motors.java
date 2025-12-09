@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.robot;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -13,6 +14,17 @@ public class motors {
     public int transferState = 0;
     public int intakeState = 0;
     public int shooterState = 0;
+
+    // ---- Shooter PIDF Constants ----
+    // Note: These values are a starting point. You will need to tune them.
+    // 1. Tune F until the motor gets close to the target speed.
+    // 2. Tune P to correct for small errors and improve reaction time.
+    // 3. Tune D to reduce oscillation if P is too high.
+    // 4. Tune I to correct for consistent steady-state error (if any).
+    public static final double SHOOTER_F = 11; // F = 32767 / max_ticks_per_second (e.g., ~2800 for a 6000 RPM motor)
+    public static final double SHOOTER_P = 300;  // P is often ~10% of F
+    public static final double SHOOTER_I = 0; // I is often ~10% of P
+    public static final double SHOOTER_D = 40;  // D is often started at 0
 
     // ---- Motor Fields ----
     private DcMotorEx shooterMotor0;
@@ -31,9 +43,13 @@ public class motors {
         shooterMotor1 = hardwareMap.get(DcMotorEx.class, "motor1");
         shooterMotor1.setDirection(DcMotorSimple.Direction.REVERSE);
         shooterMotor1.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        shooterMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        shooterMotor1.setVelocityPIDFCoefficients(SHOOTER_P, SHOOTER_I, SHOOTER_D, SHOOTER_F);
 
         shooterMotor0 = hardwareMap.get(DcMotorEx.class, "motor0");
         shooterMotor0.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        shooterMotor0.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        shooterMotor0.setVelocityPIDFCoefficients(SHOOTER_P, SHOOTER_I, SHOOTER_D, SHOOTER_F);
 
         transferMotor = hardwareMap.get(DcMotorEx.class, "motor2");
         transferMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
@@ -72,6 +88,8 @@ public class motors {
     public int getShooterState(){
         return shooterState;
     }
+    public double getShooterMotor1RPM() {return 60 * shooterMotor1.getVelocity() / ticks_per_rev; }
+    public double getShooterMotor0RPM() {return 60 * shooterMotor0.getVelocity() / ticks_per_rev; }
 
     public void setIntakeState(int state) {
         switch (state) {

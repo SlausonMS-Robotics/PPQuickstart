@@ -10,12 +10,10 @@ public class servos {
 
     // ---- Constants ----
 
-    // The physical angle limits of the turret in degrees. Adjust these to match your hardware.
-    public static final double TURRET_MIN_ANGLE_DEG = -30.0;
-    public static final double TURRET_MAX_ANGLE_DEG = 210.0;
 
-    public static final double TURRET_MAX_POS = .7;
-    public static final double TURRET_MIN_POS = .3;
+
+    public static final double TURRET_MAX_DEG = 110;
+    public static final double TURRET_MIN_DEG = -110;
 
     // ---- Physical Conversion Constants ----
     private static final double GEAR_RATIO = 86.0 / 42.0; // Turret Gear / Servo Gear
@@ -26,7 +24,7 @@ public class servos {
     private static final double SERVO_UNITS_PER_DEGREE = (GEAR_RATIO / SERVO_DEGREES_RANGE);
 
     // ---- PID Constants ----
-    public static final double TURRET_P = 0.5;
+    public static final double TURRET_P = 0.05;
     public static final double TURRET_I = 0.0;
     public static final double TURRET_D = 0.005;
 
@@ -47,8 +45,8 @@ public class servos {
         this.telemetry = telemetry;
         turretServo = hardwareMap.get(ServoImplEx.class, "shservo0");
         ledServo = hardwareMap.get(ServoImplEx.class, "shservo1");
-        intakeServo1 = hardwareMap.get(ServoImplEx.class, "shservo3");
-        intakeServo2 = hardwareMap.get(ServoImplEx.class, "shservo4");
+        intakeServo1 = hardwareMap.get(ServoImplEx.class, "shservo4"); //left
+        intakeServo2 = hardwareMap.get(ServoImplEx.class, "shservo5"); //right
 
         ledServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
 
@@ -104,7 +102,7 @@ public class servos {
 
         incrementTurretInDegrees(pidCorrectionDeg);
 
-        if (telemetry != null) {
+        if (telemetry == null) {
             telemetry.addData("Target Field Heading", "%.2f", targetFieldHeadingDeg);
             telemetry.addData("Turret Field Heading", "%.2f", getTurretFieldAngleDeg(robotHeadingDeg));
             telemetry.addData("Robot Current Heading", "%.2f", robotHeadingDeg);
@@ -128,8 +126,8 @@ public class servos {
         double curPos = turretServo.getPosition();
         double degIncrementToPos = degInc * SERVO_UNITS_PER_DEGREE;
         double newPos = curPos + degIncrementToPos;
-        if (newPos < TURRET_MIN_POS - .05) newPos = TURRET_MAX_POS;
-        else if (newPos > TURRET_MAX_POS + .05) newPos = TURRET_MIN_POS;
+        if (newPos < TURRET_CENTER_POS + (TURRET_MIN_DEG * SERVO_UNITS_PER_DEGREE)) newPos = TURRET_CENTER_POS + ((TURRET_MAX_DEG - 5) * SERVO_UNITS_PER_DEGREE);
+        else if (newPos > TURRET_CENTER_POS + (TURRET_MAX_DEG * SERVO_UNITS_PER_DEGREE)) newPos = TURRET_CENTER_POS + ((TURRET_MIN_DEG + 5) * SERVO_UNITS_PER_DEGREE);
         turretServo.setPosition(newPos);
 
     }
@@ -145,8 +143,8 @@ public class servos {
      * @return The turret's robot-centric angle in degrees.
      */
     public double getTurretRobotAngleDeg() {
-        double pos = turretServo.getPosition(); //.5 = 90 degrees
-        return (pos - TURRET_CENTER_POS) / SERVO_UNITS_PER_DEGREE;
+        double pos = turretServo.getPosition(); //.5 = 0 degrees, positive is to the right
+        return (pos - TURRET_CENTER_POS) / SERVO_UNITS_PER_DEGREE; //center position is facing forward
     }
 
     public void setTurretServoPos(double pos) {
@@ -156,7 +154,7 @@ public class servos {
 
 
     public double getTurretFieldAngleDeg(double robotHeadingDeg) {
-        return robotHeadingDeg + getTurretRobotAngleDeg();
+        return robotHeadingDeg - getTurretRobotAngleDeg();
     }
 
 

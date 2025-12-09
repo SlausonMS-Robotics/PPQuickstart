@@ -44,11 +44,12 @@ public class Red_12_Rear_1 extends OpMode {
         Servos = new servos();
         Servos.init(hardwareMap, telemetry);
         limelight = new limelight3A();
-        limelight.init(hardwareMap, 0, telemetry);
+
 
         // Initialize path follower
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));
+        limelight.init(hardwareMap, 0, telemetry, Servos, follower);
 
         // Initialize reusable aiming class
         turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
