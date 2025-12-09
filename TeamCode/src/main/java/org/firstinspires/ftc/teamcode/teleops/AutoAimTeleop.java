@@ -31,6 +31,7 @@ public class AutoAimTeleop extends OpMode {
     private int robotState = 0;
     private boolean useOdomTracking = true;
     private int previousRobotState = 0;
+    private int buttonCount = 0;
 
     Follower follower;
 
@@ -97,8 +98,19 @@ public class AutoAimTeleop extends OpMode {
                 //turretAimer.updatePoseFromLimelight();
                 //telemetry.addData("IMU Yaw", mySensors.getImuYawDeg());
                 robotMotors.setShooterVelocity(robotMotors.getShooterVelocity(6000));
+
                 buttonDebounceTimer.resetTimer();
             }
+
+            if(gamepad1.dpad_up){
+                if(buttonCount == 0 ){
+                    turretAimer.llAim(true);
+                    buttonCount++;
+                }
+                else turretAimer.llAim(false);
+            }
+            else buttonCount = 0;
+
             if(gamepad1.b){
                 //turretAimer.updatePoseFromLimelight();
                 //telemetry.addData("IMU Yaw", mySensors.getImuYawDeg());
