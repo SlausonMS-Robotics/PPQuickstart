@@ -47,7 +47,7 @@ public class TurretAiming {
         this.Servos = Servos;
         this.robotMotors = robotMotors;
         this.telemetry = telemetry;
-        this.movingAverage = helpers;
+        this.movingAverage = new other_helpers();
         movingAverage.initMovingAverage(5);
         llTimer.resetTimer();
     }
