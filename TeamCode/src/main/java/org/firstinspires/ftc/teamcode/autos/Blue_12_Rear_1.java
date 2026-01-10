@@ -14,6 +14,7 @@ import org.firstinspires.ftc.teamcode.robot.TurretAiming;
 import org.firstinspires.ftc.teamcode.robot.limelight3A;
 import org.firstinspires.ftc.teamcode.robot.motors;
 import org.firstinspires.ftc.teamcode.robot.servos;
+import org.firstinspires.ftc.teamcode.robot.states;
 
 @Autonomous(name = "Blue 12 Rear 1 Auto", group = "Autonomous")
 @Configurable // Panels
@@ -27,6 +28,8 @@ public class Blue_12_Rear_1 extends OpMode {
 
     // Robot hardware and logic classes
     private motors robotMotors;
+    states robotStateController = new states();
+    private int robotState = 0;
     private servos Servos;
     private limelight3A limelight;
     private TurretAiming turretAimer;
@@ -51,7 +54,7 @@ public class Blue_12_Rear_1 extends OpMode {
         limelight.init(hardwareMap, 0, telemetry, Servos, follower);
 
         // Initialize reusable aiming class
-        turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
+        //turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
 
         paths = new Paths(follower, Paths.AutoPath.BLUE_12_REAR_1); // Build paths from the external Paths class
 
@@ -71,6 +74,9 @@ public class Blue_12_Rear_1 extends OpMode {
 
     @Override
     public void loop() {
+        if (opmodeTimer.getElapsedTime() > 500) { //delay a little to make sure robot is ready to shoot
+            robotMotors.shoot();
+        }
         follower.update(); // Update Pedro Pathing
         //turretAimer.update(myAllianceColor, false); // Update turret aim and shooter speed continuously
         autonomousPathUpdate(); // Update autonomous state machine
@@ -86,14 +92,14 @@ public class Blue_12_Rear_1 extends OpMode {
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                if (opmodeTimer.getElapsedTime() > 500) { //delay a little to make sure robot is ready to shoot
-                    robotMotors.shoot();
-                }
-                if(pathTimer.getElapsedTime() > 2000){
+
+                if(pathTimer.getElapsedTime() > 2000) {
                     //robotMotors.stopTransfer();
                     //robotMotors.toggleIntake();
                     follower.followPath(paths.Path1);
-                    setPathState(1);
+                    if (!follower.isBusy()){
+                        setPathState(1);
+                     }
 
                 }
                 break;
@@ -157,6 +163,8 @@ public class Blue_12_Rear_1 extends OpMode {
                 }
                 break;
         }
+
+        robotStateController.setRobotState(robotState, Servos, robotMotors);
     }
 
     /**

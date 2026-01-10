@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.teleops;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
+import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -11,6 +12,7 @@ import org.firstinspires.ftc.teamcode.robot.PoseStorage;
 import org.firstinspires.ftc.teamcode.robot.TurretAiming;
 import org.firstinspires.ftc.teamcode.robot.limelight3A;
 import org.firstinspires.ftc.teamcode.robot.motors;
+import org.firstinspires.ftc.teamcode.robot.other_helpers;
 import org.firstinspires.ftc.teamcode.robot.sensors;
 import org.firstinspires.ftc.teamcode.robot.servos;
 import org.firstinspires.ftc.teamcode.robot.states;
@@ -19,31 +21,42 @@ import org.firstinspires.ftc.teamcode.robot.states;
 public class AutoAimTeleop extends OpMode {
 
     private String myAllianceColor = "blue";
-
+    private other_helpers helpers;
     private Timer buttonDebounceTimer;
     motors robotMotors = new motors();
+
+    sensors Sensors = new sensors();
     limelight3A limelight = new limelight3A();
     servos Servos = new servos();
     states robotStateController = new states();
     private TurretAiming turretAimer;
 
-    private sensors mySensors;
     private int robotState = 0;
     private boolean useOdomTracking = true;
+
+
     private int previousRobotState = 0;
     private int buttonCount = 0;
+    static double FAR_BOUNCE_POS = .33;
+    static double MID_BOUNCE_POS = .42;
+    static double CLOSE_BOUNCE_POS = .52;
+    static int FAR_SHOOTER_RPM = 3300;
+    static int MID_SHOOTER_RPM = 2900;
+    static int CLOSE_SHOOTER_RPM = 2600;
 
     Follower follower;
+
 
     @Override
     public void init() {
         robotMotors.init(hardwareMap);
-        //mySensors.init(hardwareMap);
+        Sensors.init(hardwareMap);
         Servos.init(hardwareMap, telemetry);
         follower = Constants.createFollower(hardwareMap);
-        turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
+        turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry, helpers);
         limelight.init(hardwareMap, 3, telemetry, Servos, follower);
         limelight.pollLimelight();
+        Servos.setBouncerServo(.5);
 
 
 
@@ -86,7 +99,22 @@ public class AutoAimTeleop extends OpMode {
             robotState = previousRobotState;
         }
 
-        double scalar = (gamepad1.left_trigger > .2) ? 0.5 : 1.0;
+        double scalar = (gamepad1.left_trigger > .2) ? 0.4 : 1.0;
+
+
+        if (Sensors.getCSDistanceMM() < 60){
+            if(robotState != 2) {
+                robotState = 0;
+            }
+        }
+
+        if(gamepad1.start){
+            robotMotors.setShooterVelocity(0);
+        }
+
+        if(gamepad1.back) {
+            robotMotors.setShooterVelocity(robotMotors.getShooterVelocityFromRPM(6000));
+        }
 
         if (buttonDebounceTimer.getElapsedTime() >= 500) {
             if (gamepad1.y) {
@@ -95,32 +123,39 @@ public class AutoAimTeleop extends OpMode {
                 buttonDebounceTimer.resetTimer();
             }
             if(gamepad1.x){
-                //turretAimer.updatePoseFromLimelight();
-                //telemetry.addData("IMU Yaw", mySensors.getImuYawDeg());
-                robotMotors.setShooterVelocity(robotMotors.getShooterVelocity(6000));
+
+                turretAimer.setShooter(1.5); // sets rpm and bouncer position to x meters
 
                 buttonDebounceTimer.resetTimer();
             }
 
             if(gamepad1.dpad_up){
-                if(buttonCount == 0 ){
                     turretAimer.llAim(true);
-                    buttonCount++;
-                }
-                else turretAimer.llAim(false);
+
             }
-            else buttonCount = 0;
+            else turretAimer.llAim(false);
 
             if(gamepad1.b){
-                //turretAimer.updatePoseFromLimelight();
-                //telemetry.addData("IMU Yaw", mySensors.getImuYawDeg());
-                robotMotors.setShooterVelocity(robotMotors.getShooterVelocity(3000));
+
+                turretAimer.setShooter(2.25); // sets rpm and bouncer position to x meters
                 buttonDebounceTimer.resetTimer();
             }
             if(gamepad1.a){
                 //turretAimer.updatePoseFromLimelight();
-                //telemetry.addData("IMU Yaw", mySensors.getImuYawDeg());
-                robotMotors.setShooterVelocity(robotMotors.getShooterVelocity(2650));
+                //telemetry.addData("IMU Yaw", Sensors.getImuYawDeg());
+                turretAimer.setShooter(3.2); // sets rpm and bouncer position to x meters
+                buttonDebounceTimer.resetTimer();
+            }
+            if(gamepad1.dpad_left){
+                double pos = Servos.getBouncerServoPos();
+                pos -= .01;
+                Servos.setBouncerServo(pos);
+                buttonDebounceTimer.resetTimer();
+            }
+            if(gamepad1.dpad_right){
+                double pos = Servos.getBouncerServoPos();
+                pos += .01;
+                Servos.setBouncerServo(pos);
                 buttonDebounceTimer.resetTimer();
             }
         }
@@ -128,11 +163,11 @@ public class AutoAimTeleop extends OpMode {
 
         if (buttonDebounceTimer.getElapsedTime() >= 150) {
             if (gamepad1.right_bumper){
-                Servos.incrementTurretInDegrees(-5 * scalar);
+                Servos.incrementTurretInDegrees(-3 * scalar);
                 buttonDebounceTimer.resetTimer();
             }
             if (gamepad1.left_bumper){
-                Servos.incrementTurretInDegrees(5 * scalar);
+                Servos.incrementTurretInDegrees(3 * scalar);
                 buttonDebounceTimer.resetTimer();
             }
         }
@@ -152,10 +187,12 @@ public class AutoAimTeleop extends OpMode {
             Math.pow(-gamepad1.left_stick_y * scalar, 1),
             Math.pow(-gamepad1.right_stick_x * scalar, 1),
             false);
+        follower.update();
 
         robotStateController.setRobotState(robotState, Servos, robotMotors);
         telemetry.addData("Bot Pose", follower.getPose());
-        follower.update();
+        telemetry.addData("Bouncer Pos", Servos.getBouncerServoPos());
+        telemetry.addData("Sensor Dist", Sensors.getCSDistanceMM());
         telemetry.update();
     }
 

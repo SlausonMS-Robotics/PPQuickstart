@@ -71,7 +71,7 @@ public class motors {
         setTransferState(1);
     }
 
-    public double getShooterVelocity(int motorRPM){
+    public double getShooterVelocityFromRPM(double motorRPM){
         return motorRPM * ticks_per_rev / 60;
     }
 
@@ -130,7 +130,7 @@ public class motors {
         if (shooterMotor1 != null) shooterMotor1.setVelocity(velocity);
     }
 
-    public double getShooterVelocity() {
+    public double getShooterVelocityFromRPM() {
         if (shooterMotor0 != null) {
             return shooterMotor0.getVelocity();
         }
