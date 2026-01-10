@@ -36,6 +36,9 @@ public class servos {
     
     // ---- Telemetry ----
     private Telemetry telemetry;
+    static double BOUNCE_POS_1 = .33; //Far
+    static double MID_BOUNCE_POS = .42;
+    static double CLOSE_BOUNCE_POS = .52;
 
     public enum LedColor { GREEN, RED, VIOLET, YELLOW, OFF }
 

@@ -18,7 +18,11 @@ public class TurretAiming {
     private final Timer llTimer = new Timer();
     private static final int ticks_per_rev = 28;
 
-    // ---- Aiming Constants (moved from other_helpers) ----
+    // ---- Shooter State Members ----
+    private double targetRPM = 0;
+    private double targetBouncerPos = 0.5;
+
+    // ---- Aiming Constants ----
     private static final int blueGoalX = 12;
     private static final int blueGoalY = 136;
     private static final int redGoalX = 136;
@@ -27,13 +31,15 @@ public class TurretAiming {
     private static final double minTurretAngle = -110;
     private static final double maxTurretAngle = 110;
 
-    // ---- Polynomial RPM Coefficients ----
-    // These coefficients define the quadratic equation: RPM = A*x^2 + B*x + C
-    // where x is the distance in meters. Derived from the new stepped data.
-    private static final double POLY_A = 140;
-    private static final double POLY_B = 100;
-    private static final double POLY_C = 2300;
-    private double previousHeadingError = 0;
+    // ---- Multi-Output Lookup Table Data ----
+    // Independent Variable: Distance in meters
+    private static final double[] LOOKUP_DISTANCES = {1.0, 1.5, 2.0, 2.5, 3.0, 3.5};
+    
+    // Output 1: Flywheel RPM
+    private static final double[] LOOKUP_RPMS = {2500, 2700, 2800, 2900, 3200, 3500};
+    
+    // Output 2: Bouncer Servo Position
+    private static final double[] LOOKUP_BOUNCER_POS = {0.55, 0.52, 0.48, 0.42, 0.34, 0.31};
 
     public TurretAiming(Follower follower, limelight3A limelight, servos Servos, motors robotMotors, Telemetry telemetry, other_helpers helpers) {
         this.follower = follower;
@@ -47,205 +53,134 @@ public class TurretAiming {
     }
 
     /**
-     * Aims the turret using odometry data as the default.
+     * Sets the shooter parameters (RPM and Bouncer Position) based on distance.
+     */
+    public void setShooter(double distMeters) { //sets flywheel speed and bouncer position based on distance to goal
+        if (distMeters > .05 && distMeters < 5) {
+            // Clamp distance to the range of our lookup table
+            double clampedDist = Math.max(LOOKUP_DISTANCES[0], Math.min(LOOKUP_DISTANCES[LOOKUP_DISTANCES.length - 1], distMeters));
+            
+            targetRPM = interpolate(clampedDist, LOOKUP_DISTANCES, LOOKUP_RPMS);
+            targetBouncerPos = interpolate(clampedDist, LOOKUP_DISTANCES, LOOKUP_BOUNCER_POS);
+        } else {
+            targetRPM = 0;
+            targetBouncerPos = 0.5;
+        }
+        
+        robotMotors.setShooterVelocity(robotMotors.getShooterVelocityFromRPM(targetRPM));
+        Servos.setBouncerServo(targetBouncerPos);
+    }
+
+    /**
+     * Aims the turret and calculates RPM/Bouncer position using synchronized lookup tables.
      */
     public void updateOdomAiming(String myAllianceColor) {
-        // Set shooter speed based on odometry
-        double targetRPM = 0;
-        double odomDistanceMeters = .0254 * distanceToGoalInches(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
-        if (odomDistanceMeters > .05 && odomDistanceMeters < 5) {
-            targetRPM = getRPMForDistancePolynomial(odomDistanceMeters);
-            //targetRPM = getRPMForDistanceMeters(odomDistanceMeters);
-            double speed = targetRPM * ticks_per_rev / 60;
-            robotMotors.setShooterVelocity(speed);
-        }
+        double distInches = distanceToGoalInches(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
+        double distMeters = .0254 * distInches;
 
-        // Aim with odometry
+        setShooter(distMeters);
+
         double robotHeadingDeg = Math.toDegrees(follower.getPose().getHeading());
         double targetFieldHeadingDeg = getFieldHeadingToGoal(follower.getPose().getX(), follower.getPose().getY(), myAllianceColor);
         
-        //Servos.updateTurretWithPID(targetFieldHeadingDeg, robotHeadingDeg);
+        // Servos.updateTurretWithPID(targetFieldHeadingDeg, robotHeadingDeg);
 
-        
         if (telemetry != null) {
-            telemetry.addData("AIMING MODE", "ODOMETRY (DEFAULT)");
-            telemetry.addData("Robot Heading", robotHeadingDeg);
-            telemetry.addData("Target Heading", targetFieldHeadingDeg);
-            telemetry.addData("Distance to Goal (m)",odomDistanceMeters);
-            telemetry.addData("Target RPM",targetRPM);
-            telemetry.addData("Motor1 RPM", robotMotors.getShooterMotor1RPM());
-            telemetry.addData("Motor0 RPM", robotMotors.getShooterMotor0RPM());
-            if (limelight.result.getStaleness() >= 500 ) {
-
+            telemetry.addData("AIMING MODE", "ODOMETRY (LOOKUP)");
+            telemetry.addData("Dist (m)", "%.2f", distMeters);
+            telemetry.addData("Target RPM", targetRPM);
+            telemetry.addData("Target Bouncer", "%.3f", targetBouncerPos);
+            
+            if (limelight.result != null && limelight.result.getStaleness() < 500) {
                 if (limelight.pollLimelight()) {
-                    telemetry.addData("Limelight X", limelight.getLLFieldX());
-                    telemetry.addData("Limelight Y", limelight.getLLFieldY());
-                    telemetry.addData("Limelight Heading", getLLFieldHeadingDeg());
+                    telemetry.addData("LL X", limelight.getLLFieldX());
+                    telemetry.addData("LL Y", limelight.getLLFieldY());
+                    telemetry.addData("LL Heading", getLLFieldHeadingDeg());
                 }
             }
         }
-        
-
+        updateTelemetry();
     }
-    
+
     /**
-     * Explicitly polls the Limelight and attempts to aim.
-     * @return true if a valid target was found and used for aiming, false otherwise.
+     * Generic linear interpolation helper.
      */
-    public boolean updateLimelightAiming() {
-        if (limelight == null || llTimer.getElapsedTime() < 10) {
-            return false; 
-        }
-        llTimer.resetTimer();
-
-        if (limelight.pollLimelight() && limelight.result.isValid()) {
-            Servos.setLedColor(servos.LedColor.GREEN);
-
-            double llGoalHeadingError = limelight.result.getTx();
-            double llGoalDist = limelight.getLLAvgDist();
-
-            if (llGoalDist > 0 && llGoalDist < 5) {
-                double targetRPM = getRPMForDistancePolynomial(llGoalDist);
-                //double targetRPM = getRPMForDistanceMeters(llGoalDist);
-                robotMotors.setShooterVelocity(targetRPM);
-            }
-
-
-
-
-            Servos.updateTurretWithPID(0, llGoalHeadingError);
-
-            if (telemetry != null) {
-                telemetry.addData("AIMING MODE", "LIMELIGHT");
-            }
-
-            return true; // Success
-        }
+    public static double interpolate(double x, double[] xArr, double[] yArr) {
+        if (x <= xArr[0]) return yArr[0];
+        if (x >= xArr[xArr.length - 1]) return yArr[yArr.length - 1];
         
+        for (int i = 0; i < xArr.length - 1; i++) {
+            if (x <= xArr[i + 1]) {
+                double x0 = xArr[i];
+                double x1 = xArr[i + 1];
+                double y0 = yArr[i];
+                double y1 = yArr[i + 1];
+                return y0 + (x - x0) * (y1 - y0) / (x1 - x0);
+            }
+        }
+        return yArr[yArr.length - 1];
+    }
+
+    public boolean updateLimelightAiming() {
+        if (limelight == null || llTimer.getElapsedTime() < 10) return false;
+        llTimer.resetTimer();
+        limelight.pollLimelight();
+
+        if (limelight.result.isValid()) {
+            Servos.setLedColor(servos.LedColor.GREEN);
+            double llGoalDist = limelight.getLLAvgDist();
+            if (llGoalDist > .25 && llGoalDist < 4.5) {
+                setShooter(llGoalDist);
+
+                Servos.updateTurretWithPID(0, limelight.result.getTx());
+            }
+            return true;
+        }
         Servos.setLedColor(servos.LedColor.RED);
         return false;
     }
 
-    public boolean llAim(boolean clear) {
-        if (limelight == null || llTimer.getElapsedTime() < 20) {
-            return false;
-        }
-        llTimer.resetTimer();
-        if (clear) movingAverage.clearReadings();
-        if (limelight.pollLimelight()) {
-            if(!limelight.result.isValid()) return false;
-            double llGoalHeadingError = limelight.result.getTx();
-            if (Math.abs(llGoalHeadingError) <= .1) return false;
-            if (limelight.getLLAvgDist() <= .2 || limelight.getLLAvgDist() >= 4) return false;
-            double avgHeadingError = movingAverage.updateAndGetAverage(llGoalHeadingError);
-            if (Math.abs(avgHeadingError) < 1 )
-                Servos.setLedColor(servos.LedColor.YELLOW);
-            else if (Math.abs(avgHeadingError) < .5)
-                Servos.setLedColor(servos.LedColor.GREEN);
-            else Servos.setLedColor(servos.LedColor.RED);
-            Servos.updateTurretWithPID(0, avgHeadingError);
-
-            if (telemetry != null) {
-                telemetry.addData("AIMING MODE", "LIMELIGHT");
-            }
-            return true;
-        }
-        else return false;
-
-
-    }
-
-    /**
-     * Updates the follower's pose with the latest data from the Limelight.
-     * This should be called periodically to correct for odometry drift.
-     */
     public void updatePoseFromLimelight() {
-        if (limelight == null || !limelight.pollLimelight() || !limelight.result.isValid()) {
-            return; // Do nothing if we have no valid data
-        }
-
-        double x = limelight.getLLFieldX();
-        double y = limelight.getLLFieldY();
-
-        // Only update if the Limelight data is reasonable (e.g., not 0,0,0)
-        if (x >= 0.0 && y >= 0.0) {
-            Pose newPose = getLLBotpose();
+        if (limelight == null || !limelight.pollLimelight() || !limelight.result.isValid()) return;
+        Pose newPose = getLLBotpose();
+        if (newPose != null && newPose.getX() >= 0.0 && newPose.getY() >= 0.0) {
             follower.setPose(newPose);
-            telemetry.addData("LL Bot Pose", newPose);
         }
     }
 
-
-    // ---- Aiming Logic ----
-
-    public static double getRPMForDistancePolynomial(double rangeMeters) {
-        return POLY_A * Math.pow(rangeMeters, 2) + POLY_B * rangeMeters + POLY_C;
+    private void updateTelemetry() {
+        if (telemetry != null) {
+            telemetry.addData("Current Pose", follower.getPose());
+            telemetry.update();
+        }
     }
 
-    public static double getRPMForDistanceMeters(double rangeMeters) {
-        if (rangeMeters <= 1.0) return 2500;
-        if (rangeMeters <= 1.5) return 2700;
-        if (rangeMeters <= 2.0) return 3050;
-        if (rangeMeters <= 2.5) return 3400;
-        if (rangeMeters <= 3.0) return 3900;
-        if (rangeMeters <= 3.5) return 4250;
-        return 4500;
-    }
-   
     private double distanceToBlueGoal(double currentX, double currentY) {
-        double deltaX = blueGoalX - currentX;
-        double deltaY = blueGoalY - currentY;
-        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        return Math.sqrt(Math.pow(blueGoalX - currentX, 2) + Math.pow(blueGoalY - currentY, 2));
     }
     
     private double distanceToRedGoal(double currentX, double currentY) {
-        double deltaX = redGoalX - currentX;
-        double deltaY = redGoalY - currentY;
-        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        return Math.sqrt(Math.pow(redGoalX - currentX, 2) + Math.pow(redGoalY - currentY, 2));
     }
 
-    private double getFieldHeadingToBlueGoal(double currentX, double currentY) {
-        return Math.toDegrees(Math.atan2(blueGoalY - currentY, blueGoalX - currentX));
-    }
-
-    private double getFieldHeadingToRedGoal(double currentX, double currentY) {
-        return Math.toDegrees(Math.atan2(redGoalY - currentY, redGoalX - currentX));
-    }
-    
     private double distanceToGoalInches(double currentX, double currentY, String allianceColor) {
-        if ("blue".equals(allianceColor)) {
-            return distanceToBlueGoal(currentX, currentY);
-        } else {
-            return distanceToRedGoal(currentX, currentY);
-        }
+        return "blue".equals(allianceColor) ? distanceToBlueGoal(currentX, currentY) : distanceToRedGoal(currentX, currentY);
     }
 
     public double getFieldHeadingToGoal(double currentX, double currentY, String allianceColor) {
-        if ("blue".equals(allianceColor)) {
-            return getFieldHeadingToBlueGoal(currentX, currentY);
-        } else {
-            return getFieldHeadingToRedGoal(currentX, currentY);
-        }
+        double targetX = "blue".equals(allianceColor) ? blueGoalX : redGoalX;
+        double targetY = "blue".equals(allianceColor) ? blueGoalY : redGoalY;
+        return Math.toDegrees(Math.atan2(targetY - currentY, targetX - currentX));
     }
 
     public double getLLFieldHeadingDeg() {
-        double llAngleDeg = 0;
-        if (limelight.result != null && limelight.result.isValid()) {
-
-            llAngleDeg = limelight.result.getTx(); // positive is to the right
-        }
-        else return 0.0;
-        double servoAngleDeg = Servos.getTurretRobotAngleDeg(); //0 is straight ahead, positive is to the right
-        double goalAngleDeg = getFieldHeadingToGoal(limelight.getLLFieldX(), limelight.getLLFieldY(), PoseStorage.allianceColor); //calculates where the goal is in terms of field angle (0 is to the right, 180 is left)
-
-
-
-        return goalAngleDeg + servoAngleDeg + llAngleDeg; //example: servo is at 90deg (straight left relative to robot heading), LL says -5, goal heading is 135 then robot heading is 40
+        if (limelight.result == null || !limelight.result.isValid()) return 0.0;
+        double goalAngleDeg = getFieldHeadingToGoal(limelight.getLLFieldX(), limelight.getLLFieldY(), PoseStorage.allianceColor);
+        return goalAngleDeg + Servos.getTurretRobotAngleDeg() + limelight.result.getTx();
     }
 
     public Pose getLLBotpose() {
         if (limelight.result == null || !limelight.result.isValid()) return null;
-        Pose botPose = new Pose(limelight.getLLFieldX(), limelight.getLLFieldY(), getLLFieldHeadingDeg());
-        return botPose;
+        return new Pose(limelight.getLLFieldX(), limelight.getLLFieldY(), Math.toRadians(getLLFieldHeadingDeg()));
     }
 }
