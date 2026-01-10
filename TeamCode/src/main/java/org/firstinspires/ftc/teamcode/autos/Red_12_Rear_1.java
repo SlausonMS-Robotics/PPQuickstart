@@ -52,7 +52,7 @@ public class Red_12_Rear_1 extends OpMode {
         limelight.init(hardwareMap, 0, telemetry, Servos, follower);
 
         // Initialize reusable aiming class
-        turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
+        //turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
 
         // Build paths from the external Paths class, selecting the RED_12_REAR_1 set
         paths = new Paths(follower, Paths.AutoPath.RED_12_REAR_1);

@@ -88,6 +88,10 @@ public class servos {
 
     }
 
+    public double getBouncerServoPos(){
+        return bouncerServo.getPosition();
+    }
+
     /**
      * Updates the turret position using a PID controller to point towards a target field heading.
      * @param targetFieldHeadingDeg The desired field-centric heading for the turret.
