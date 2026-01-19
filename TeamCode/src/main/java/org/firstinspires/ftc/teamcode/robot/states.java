@@ -12,12 +12,12 @@ public class states {
 
 
             switch (state) {
-                case 0: //intake off, transfer off
+                case 0: //intake off, transfer hold
                     robotMotors.setTransferState(0);
                     robotMotors.setIntakeState(0);
                     Servos.setIntakeServos(false);
                     break;
-                case 1: //intake on, transfer backwards
+                case 1: //intake on, transfer slow, initial intake
                     robotMotors.setTransferState(2);
                     robotMotors.setIntakeState(1);
                     Servos.setIntakeServos(true);
@@ -27,6 +27,11 @@ public class states {
                     robotMotors.setIntakeState(1);
                     Servos.setIntakeServos(true);
                     break;
+                case 3: //intake on, transfer hold, ball near flywheel
+                    robotMotors.setTransferState(0);
+                    robotMotors.setIntakeState(1);
+                    Servos.setIntakeServos(true);
+
             }
         }
 }

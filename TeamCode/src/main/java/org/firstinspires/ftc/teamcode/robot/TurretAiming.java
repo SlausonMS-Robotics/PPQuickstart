@@ -36,10 +36,10 @@ public class TurretAiming {
     private static final double[] LOOKUP_DISTANCES = {1.0, 1.5, 2.0, 2.5, 3.0, 3.5};
     
     // Output 1: Flywheel RPM
-    private static final double[] LOOKUP_RPMS = {2500, 2700, 2800, 2900, 3200, 3500};
+    private static final double[] LOOKUP_RPMS = {2400, 2600, 2700, 2800, 3000, 3300};
     
     // Output 2: Bouncer Servo Position
-    private static final double[] LOOKUP_BOUNCER_POS = {0.55, 0.52, 0.48, 0.42, 0.34, 0.31};
+    private static final double[] LOOKUP_BOUNCER_POS = {0.538, 0.55, 0.51, 0.47, 0.43, 0.4};
 
     public TurretAiming(Follower follower, limelight3A limelight, servos Servos, motors robotMotors, Telemetry telemetry, other_helpers helpers) {
         this.follower = follower;
