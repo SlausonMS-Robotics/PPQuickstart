@@ -10,7 +10,7 @@ public class motors {
     // ---- Constants ----
     private static final double INTAKE_POWER = 1.0;
     private static final double TRANSFER_POWER = 1.0;
-    private static final double TRANSFER_REVERSE_POWER = -.18;
+    private static final double TRANSFER_REVERSE_POWER = -.1;
     public int transferState = 0;
     public int intakeState = 0;
     public int shooterState = 0;
@@ -111,11 +111,12 @@ public class motors {
                 transferState = 1;
                 break;
             case 0:
-                setTransferPower(0);
+                setTransferPower(TRANSFER_REVERSE_POWER);
                 transferState = 0;
                 break;
             case 2:
-                setTransferPower(TRANSFER_REVERSE_POWER);
+
+                setTransferPower(TRANSFER_POWER / 4);
                 transferState = 2;
                 break;
         }

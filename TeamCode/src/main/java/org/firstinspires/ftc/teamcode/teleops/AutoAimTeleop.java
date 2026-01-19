@@ -44,6 +44,8 @@ public class AutoAimTeleop extends OpMode {
     static int MID_SHOOTER_RPM = 2900;
     static int CLOSE_SHOOTER_RPM = 2600;
 
+    private boolean shot = false;
+
     Follower follower;
 
 
@@ -95,6 +97,7 @@ public class AutoAimTeleop extends OpMode {
         // Handle state changes for shooting and intake
         if (gamepad1.right_trigger > .2) {
             robotState = 2;
+            shot = true;
         } else {
             robotState = previousRobotState;
         }
@@ -102,10 +105,14 @@ public class AutoAimTeleop extends OpMode {
         double scalar = (gamepad1.left_trigger > .2) ? 0.4 : 1.0;
 
 
-        if (Sensors.getCSDistanceMM() < 60){
-            if(robotState != 2) {
-                robotState = 0;
-            }
+        if (Sensors.getCSDistanceMM() < 50 && robotState != 2){
+
+                robotState = 3;
+                shot = false;
+
+        }
+        else if(robotState != 2 && shot) {
+            robotState = 1;
         }
 
         if(gamepad1.start){

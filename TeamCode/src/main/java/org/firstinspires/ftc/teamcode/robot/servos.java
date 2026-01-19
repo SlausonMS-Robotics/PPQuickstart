@@ -50,7 +50,7 @@ public class servos {
         ledServo = hardwareMap.get(ServoImplEx.class, "shservo1");
         intakeServo1 = hardwareMap.get(ServoImplEx.class, "shservo4"); //left
         intakeServo2 = hardwareMap.get(ServoImplEx.class, "shservo5"); //right
-        bouncerServo = hardwareMap.get(ServoImplEx.class, "shservo2");
+        bouncerServo = hardwareMap.get(ServoImplEx.class, "shservo3");
 
 
         ledServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
