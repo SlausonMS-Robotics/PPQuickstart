@@ -131,7 +131,7 @@ public class AutoAimTeleop extends OpMode {
             }
             if(gamepad1.x){
 
-                turretAimer.setShooter(1.5); // sets rpm and bouncer position to x meters
+                turretAimer.setShooter(1.25); // sets rpm and bouncer position to x meters
 
                 buttonDebounceTimer.resetTimer();
             }
@@ -144,13 +144,13 @@ public class AutoAimTeleop extends OpMode {
 
             if(gamepad1.b){
 
-                turretAimer.setShooter(2.25); // sets rpm and bouncer position to x meters
+                turretAimer.setShooter(3.2); // sets rpm and bouncer position to x meters
                 buttonDebounceTimer.resetTimer();
             }
             if(gamepad1.a){
                 //turretAimer.updatePoseFromLimelight();
                 //telemetry.addData("IMU Yaw", Sensors.getImuYawDeg());
-                turretAimer.setShooter(3.2); // sets rpm and bouncer position to x meters
+                turretAimer.setShooter(2.25); // sets rpm and bouncer position to x meters
                 buttonDebounceTimer.resetTimer();
             }
             if(gamepad1.dpad_left){

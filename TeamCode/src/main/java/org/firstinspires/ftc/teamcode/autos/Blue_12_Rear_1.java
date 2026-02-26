@@ -56,7 +56,7 @@ public class Blue_12_Rear_1 extends OpMode {
         // Initialize reusable aiming class
         //turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
 
-        paths = new Paths(follower, Paths.AutoPath.BLUE_12_REAR_1); // Build paths from the external Paths class
+        paths = new Paths(follower, Paths.AutoPath.AUTO_PATH2); // Build paths from the external Paths class
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);

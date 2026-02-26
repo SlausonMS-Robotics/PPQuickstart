@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.autos;
 
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
@@ -16,8 +17,9 @@ public class Paths {
      */
     public enum AutoPath {
         BLUE_12_REAR_1,
-        RED_12_REAR_1
+        RED_12_REAR_1,
         // Add more auto path names here
+        AUTO_PATH2
     }
 
     public PathChain Path1;
@@ -67,14 +69,16 @@ public class Paths {
                 Path10 = follower.pathBuilder().addPath(new BezierLine(new Pose(54.000, 84.000), new Pose(22.000, 72.000))).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(270)).build();
                 break;
 
-            /*
-            case NEW_AUTO_PATH:
+                case AUTO_PATH2:
                 // Copy and paste your new path definitions from your external tool here
-                Path1 = ...
-                Path2 = ...
-                // etc.
+                Path1 = follower.pathBuilder().addPath(new BezierLine(new Pose(48.000, 8.000), new Pose(48.000, 96.000))).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(135)).build();
+                Path2 = follower.pathBuilder().addPath(new BezierCurve( new Pose(48.000, 96.000), new Pose(45.0, 83), new Pose(42.000, 84.500) ) ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180)) .build();
+                Path3 = follower.pathBuilder().addPath( new BezierLine( new Pose(42.000, 84.500), new Pose(16.000, 84.500) ) ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180)) .build();
+                Path4 = follower.pathBuilder().addPath( new BezierLine( new Pose(16.000, 84.500), new Pose(48.000, 96.000) ) ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135)) .build();
+                Path5 = follower.pathBuilder().addPath( new BezierCurve( new Pose(48.000, 96.000), new Pose(45.000, 60.000), new Pose(42.000, 60.000) ) ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180)) .build();
+                Path6 = follower.pathBuilder().addPath( new BezierLine( new Pose(42.000, 60.000), new Pose(16.000, 60.000) ) ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180)) .build();
+                Path7 = follower.pathBuilder().addPath( new BezierLine( new Pose(16.000, 60.000), new Pose(48.000, 96.000) ) ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135)) .build();
                 break;
-            */
         }
     }
 }
