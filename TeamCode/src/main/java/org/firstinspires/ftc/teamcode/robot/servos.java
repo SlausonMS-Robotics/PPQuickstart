@@ -116,7 +116,7 @@ public class servos {
 
         incrementTurretInDegrees(pidCorrectionDeg);
 
-        if (telemetry == null) {
+        if (telemetry != null) {
             telemetry.addData("Target Field Heading", "%.2f", targetFieldHeadingDeg);
             telemetry.addData("Turret Field Heading", "%.2f", getTurretFieldAngleDeg(robotHeadingDeg));
             telemetry.addData("Robot Current Heading", "%.2f", robotHeadingDeg);
