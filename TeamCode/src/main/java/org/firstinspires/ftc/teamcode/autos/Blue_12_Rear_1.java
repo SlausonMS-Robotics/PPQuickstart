@@ -13,6 +13,7 @@ import org.firstinspires.ftc.teamcode.robot.PoseStorage;
 import org.firstinspires.ftc.teamcode.robot.TurretAiming;
 import org.firstinspires.ftc.teamcode.robot.limelight3A;
 import org.firstinspires.ftc.teamcode.robot.motors;
+import org.firstinspires.ftc.teamcode.robot.other_helpers;
 import org.firstinspires.ftc.teamcode.robot.servos;
 import org.firstinspires.ftc.teamcode.robot.states;
 
@@ -21,6 +22,7 @@ import org.firstinspires.ftc.teamcode.robot.states;
 public class Blue_12_Rear_1 extends OpMode {
 
     private String myAllianceColor = "blue";
+    private other_helpers helpers;
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
     private int pathState; // Current autonomous path state (state machine)
@@ -36,6 +38,7 @@ public class Blue_12_Rear_1 extends OpMode {
 
     private Timer pathTimer, actionTimer, opmodeTimer;
 
+    private double timerCounter = 0;
     @Override
     public void init() {
         panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
@@ -50,14 +53,14 @@ public class Blue_12_Rear_1 extends OpMode {
 
         // Initialize path follower
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));
+        follower.setStartingPose(new Pose(48, 8, Math.toRadians(90)));
         limelight.init(hardwareMap, 0, telemetry, Servos, follower);
 
         // Initialize reusable aiming class
         //turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
 
         paths = new Paths(follower, Paths.AutoPath.AUTO_PATH2); // Build paths from the external Paths class
-
+        turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry, helpers);
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
         pathTimer = new Timer();
@@ -74,12 +77,17 @@ public class Blue_12_Rear_1 extends OpMode {
 
     @Override
     public void loop() {
-        if (opmodeTimer.getElapsedTime() > 500) { //delay a little to make sure robot is ready to shoot
-            robotMotors.shoot();
-        }
+        //if (opmodeTimer.getElapsedTime() > 500) {delay a little to make sure robot is ready to shoot
+        //robotMotors.shoot();
+    //}
+
         follower.update(); // Update Pedro Pathing
         //turretAimer.update(myAllianceColor, false); // Update turret aim and shooter speed continuously
-        autonomousPathUpdate(); // Update autonomous state machine
+        try {
+            autonomousPathUpdate(); // Update autonomous state machine
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         // Log values to Panels and Driver Station
         panelsTelemetry.debug("Path State", pathState);
@@ -89,71 +97,86 @@ public class Blue_12_Rear_1 extends OpMode {
         panelsTelemetry.update(telemetry);
     }
 
-    public void autonomousPathUpdate() {
+    public void autonomousPathUpdate() throws InterruptedException {
         switch (pathState) {
-            case 0:
+            case 0: //drive up to shooting position
 
-                if(pathTimer.getElapsedTime() > 2000) {
+                //if(pathTimer.getElapsedTime() > 2000) {
                     //robotMotors.stopTransfer();
                     //robotMotors.toggleIntake();
-                    follower.followPath(paths.Path1);
                     if (!follower.isBusy()){
+                        turretAimer.setShooter(1);
+                        follower.followPath(paths.Path1,false);
                         setPathState(1);
+                        timerCounter = 0;
                      }
 
+               // }
+                break;
+            case 1: //shoot + drive to grab ball set 1
+                if (!follower.isBusy()) {
+                    shoot();
+
+                    if (pathTimer.getElapsedTimeSeconds() >= 1.5) {
+                        follower.followPath(paths.Path2, false);
+                        setPathState(2);
+                        robotState = 1; //turn intake on
+                    }
+                    timerCounter++;
                 }
                 break;
-            case 1:
+            case 2: // grab first set of balls
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path2, true);
-                    setPathState(2);
-                }
-                break;
-            case 2:
-                if (!follower.isBusy()) {
-                    follower.followPath(paths.Path3, true);
+                    follower.followPath(paths.Path3, .5,false);
                     setPathState(3);
                 }
                 break;
-            case 3:
+            case 3: //drive back to shoot
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path4, true);
+                    follower.followPath(paths.Path4, false);
                     setPathState(4);
+                    timerCounter = 0;
                 }
                 break;
-            case 4:
+            case 4: //shoot + move to ball set 2
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path5, true);
-                    setPathState(5);
+                    shoot();
+                    if (pathTimer.getElapsedTimeSeconds() >= 1.5) {
+                        follower.followPath(paths.Path5, false);
+                        setPathState(5);
+                        robotState = 1;
+                    }
+                timerCounter++;
                 }
                 break;
-            case 5:
+            case 5: //pick up ball set 2
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path6, true);
+
+                    follower.followPath(paths.Path6, .5,false);
                     setPathState(6);
                 }
                 break;
-            case 6:
+            case 6: //drive to shoot pos
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path7, true);
+                    follower.followPath(paths.Path7, false);
                     setPathState(7);
                 }
                 break;
-            case 7:
+            case 7: //shoot ball + move to end
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path8, true);
+                    follower.followPath(paths.Path8, false);
                     setPathState(8);
                 }
                 break;
             case 8:
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path9, true);
+                    follower.followPath(paths.Path9, false);
                     setPathState(9);
                 }
                 break;
             case 9:
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path10, true);
+                    follower.followPath(paths.Path10, false);
                     setPathState(15);
                 }
                 break;
@@ -173,6 +196,15 @@ public class Blue_12_Rear_1 extends OpMode {
     public void setPathState(int pState) {
         pathState = pState;
         pathTimer.resetTimer();
+    }
+
+    public void shoot(){
+        if (timerCounter == 0) {
+            pathTimer.resetTimer();
+        }
+        if (pathTimer.getElapsedTimeSeconds() >= 0.5) {
+            robotState = 2;
+        }
     }
 
     public void setActionState(int aState) {
