@@ -44,7 +44,7 @@ public class limelight3A {
             limelight.setPollRateHz(100);
             limelight.pipelineSwitch(pipeline);
             limelight.start();
-            limelight.updateRobotOrientation(follower.getPose().getHeading());
+            //limelight.updateRobotOrientation(follower.getPose().getHeading());
 
 
             return true;

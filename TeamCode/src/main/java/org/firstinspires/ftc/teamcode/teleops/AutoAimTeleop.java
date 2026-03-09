@@ -137,7 +137,7 @@ public class AutoAimTeleop extends OpMode {
             }
 
             if(gamepad1.dpad_up){
-                    //turretAimer.llAim(true);
+                    turretAimer.LLAim();
 
             }
             //else turretAimer.llAim(false);

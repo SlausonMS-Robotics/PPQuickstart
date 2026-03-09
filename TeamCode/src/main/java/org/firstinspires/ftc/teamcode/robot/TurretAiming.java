@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.robot;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
+import com.qualcomm.hardware.limelightvision.LLResult;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -152,6 +153,14 @@ public class TurretAiming {
         if (telemetry != null) {
             telemetry.addData("Current Pose", follower.getPose());
             telemetry.update();
+        }
+    }
+
+    public void LLAim(){
+        if(llTimer.getElapsedTime() >= 15) {
+            LLResult result = limelight.limelight.getLatestResult();
+            Servos.updateTurretWithPID(0, result.getTx());
+            llTimer.resetTimer();
         }
     }
 
