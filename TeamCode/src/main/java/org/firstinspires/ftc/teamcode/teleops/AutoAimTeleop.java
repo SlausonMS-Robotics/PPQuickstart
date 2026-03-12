@@ -23,6 +23,7 @@ public class AutoAimTeleop extends OpMode {
     private String myAllianceColor = "blue";
     private other_helpers helpers;
     private Timer buttonDebounceTimer;
+    private Timer llPollTimer;
     motors robotMotors = new motors();
 
     sensors Sensors = new sensors();
@@ -32,6 +33,7 @@ public class AutoAimTeleop extends OpMode {
     private TurretAiming turretAimer;
 
     private int robotState = 0;
+    private boolean aimSwitch = true;
     private boolean useOdomTracking = true;
 
 
@@ -64,6 +66,7 @@ public class AutoAimTeleop extends OpMode {
 
 
         buttonDebounceTimer = new Timer();
+        llPollTimer = new Timer();
 
         Pose startPose;
         if (PoseStorage.autoFinished) {
@@ -123,7 +126,7 @@ public class AutoAimTeleop extends OpMode {
             robotMotors.setShooterVelocity(robotMotors.getShooterVelocityFromRPM(6000));
         }
 
-        if (buttonDebounceTimer.getElapsedTime() >= 500) {
+        if (buttonDebounceTimer.getElapsedTime() >= 300) {
             if (gamepad1.y) {
                 if(robotState == 0) robotState = 1;
                 else robotState = 0;
@@ -137,9 +140,11 @@ public class AutoAimTeleop extends OpMode {
             }
 
             if(gamepad1.dpad_up){
-                    turretAimer.LLAim();
+                aimSwitch = !aimSwitch;
+
 
             }
+
             //else turretAimer.llAim(false);
 
             if(gamepad1.b){
@@ -180,9 +185,9 @@ public class AutoAimTeleop extends OpMode {
         }
 
 
-
-        if (useOdomTracking) {
-           // turretAimer.updateOdomAiming(myAllianceColor);
+        if(aimSwitch && llPollTimer.getElapsedTime() > 20) {
+            turretAimer.LLAim();
+            llPollTimer.resetTimer();
         }
 
 
@@ -197,7 +202,7 @@ public class AutoAimTeleop extends OpMode {
         follower.update();
 
         robotStateController.setRobotState(robotState, Servos, robotMotors);
-        telemetry.addData("Bot Pose", follower.getPose());
+        //telemetry.addData("Bot Pose", follower.getPose());
         telemetry.addData("Bouncer Pos", Servos.getBouncerServoPos());
         telemetry.addData("Sensor Dist", Sensors.getCSDistanceMM());
         telemetry.update();
