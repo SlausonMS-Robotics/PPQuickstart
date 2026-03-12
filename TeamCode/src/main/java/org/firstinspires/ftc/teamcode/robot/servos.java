@@ -24,9 +24,9 @@ public class servos {
     private static final double SERVO_UNITS_PER_DEGREE = (GEAR_RATIO / SERVO_DEGREES_RANGE);
 
     // ---- PID Constants ----
-    public static final double TURRET_P = 0.05;
+    public static final double TURRET_P = 0.12;
     public static final double TURRET_I = 0.0;
-    public static final double TURRET_D = 0.005;
+    public static final double TURRET_D = 0.015;
 
     // ---- PID Controller ----
     private other_helpers pidController = new other_helpers();
@@ -101,7 +101,7 @@ public class servos {
 
 
 
-        double headingError = targetFieldHeadingDeg - getTurretFieldAngleDeg(robotHeadingDeg);
+        double headingError = targetFieldHeadingDeg - robotHeadingDeg;
         if (Math.abs(headingError) < .5) {
             setLedColor(LedColor.GREEN);
         } else if (Math.abs(headingError) < 1) {
@@ -111,16 +111,17 @@ public class servos {
 
 
         // Get the PID correction in degrees
-        double pidCorrectionDeg = -pidController.updatePID(headingError, 0);
+        double pidCorrectionDeg = pidController.updatePID(headingError, 0.1);
         
 
-        incrementTurretInDegrees(pidCorrectionDeg);
+        incrementTurretInDegrees(-pidCorrectionDeg);
 
         if (telemetry != null) {
-            telemetry.addData("Target Field Heading", "%.2f", targetFieldHeadingDeg);
-            telemetry.addData("Turret Field Heading", "%.2f", getTurretFieldAngleDeg(robotHeadingDeg));
-            telemetry.addData("Robot Current Heading", "%.2f", robotHeadingDeg);
-            telemetry.addData("Heading Error", "%.2f", headingError);
+            //telemetry.addData("Target Field Heading", "%.2f", targetFieldHeadingDeg);
+            //telemetry.addData("Turret Field Heading", "%.2f", getTurretFieldAngleDeg(robotHeadingDeg));
+            //telemetry.addData("Robot Current Heading", "%.2f", robotHeadingDeg);
+            //telemetry.addData("Heading Error", "%.2f", headingError);
+            telemetry.addData("Heading Error", "%.2f", pidCorrectionDeg);
             telemetry.addData("PID Correction (Deg)", "%.2f", pidCorrectionDeg);
         }
     }
