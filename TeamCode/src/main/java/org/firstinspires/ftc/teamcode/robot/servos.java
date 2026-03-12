@@ -12,8 +12,8 @@ public class servos {
 
 
 
-    public static final double TURRET_MAX_DEG = 110;
-    public static final double TURRET_MIN_DEG = -110;
+    public static final double TURRET_MAX_DEG = 45;
+    public static final double TURRET_MIN_DEG = -45;
 
     // ---- Physical Conversion Constants ----
     private static final double GEAR_RATIO = 86.0 / 42.0; // Turret Gear / Servo Gear
@@ -111,7 +111,7 @@ public class servos {
 
 
         // Get the PID correction in degrees
-        double pidCorrectionDeg = pidController.updatePID(headingError, 0.1);
+        double pidCorrectionDeg = pidController.updatePID(headingError, 0);
         
 
         incrementTurretInDegrees(-pidCorrectionDeg);
@@ -141,8 +141,10 @@ public class servos {
         double curPos = turretServo.getPosition();
         double degIncrementToPos = degInc * SERVO_UNITS_PER_DEGREE;
         double newPos = curPos + degIncrementToPos;
-        if (newPos < TURRET_CENTER_POS + (TURRET_MIN_DEG * SERVO_UNITS_PER_DEGREE)) newPos = TURRET_CENTER_POS + ((TURRET_MAX_DEG - 5) * SERVO_UNITS_PER_DEGREE);
-        else if (newPos > TURRET_CENTER_POS + (TURRET_MAX_DEG * SERVO_UNITS_PER_DEGREE)) newPos = TURRET_CENTER_POS + ((TURRET_MIN_DEG + 5) * SERVO_UNITS_PER_DEGREE);
+        //if (newPos < TURRET_CENTER_POS + (TURRET_MIN_DEG * SERVO_UNITS_PER_DEGREE)) newPos = TURRET_CENTER_POS + ((TURRET_MAX_DEG - 5) * SERVO_UNITS_PER_DEGREE);
+        //else if (newPos > TURRET_CENTER_POS + (TURRET_MAX_DEG * SERVO_UNITS_PER_DEGREE)) newPos = TURRET_CENTER_POS + ((TURRET_MIN_DEG + 5) * SERVO_UNITS_PER_DEGREE);
+        if(newPos > TURRET_MAX_DEG) newPos = TURRET_MAX_DEG;
+        else if(newPos < TURRET_MIN_DEG) newPos = TURRET_MIN_DEG;
         turretServo.setPosition(newPos);
 
     }
