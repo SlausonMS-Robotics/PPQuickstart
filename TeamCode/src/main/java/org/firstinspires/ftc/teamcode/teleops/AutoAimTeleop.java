@@ -102,7 +102,7 @@ public class AutoAimTeleop extends OpMode {
             robotState = previousRobotState;
         }
 
-        double scalar = (gamepad1.left_trigger > .2) ? 0.4 : 1.0;
+        double scalar = (gamepad1.left_trigger > .2) ? 1.2 : .25;
 
 
         if (Sensors.getCSDistanceMM() < 50 && robotState != 2){

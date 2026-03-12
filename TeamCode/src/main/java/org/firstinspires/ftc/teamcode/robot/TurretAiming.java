@@ -40,7 +40,7 @@ public class TurretAiming {
     private static final double[] LOOKUP_RPMS = {2200, 2550, 2700, 3150, 3400, 3550};
     
     // Output 2: Bouncer Servo Position
-    private static final double[] LOOKUP_BOUNCER_POS = {0.58, 0.54, 0.49, 0.46, 0.41, 0.38};
+    private static final double[] LOOKUP_BOUNCER_POS = {0.56, 0.53, 0.49, 0.46, 0.41, 0.38};
 
     public TurretAiming(Follower follower, limelight3A limelight, servos Servos, motors robotMotors, Telemetry telemetry, other_helpers helpers) {
         this.follower = follower;
@@ -160,6 +160,7 @@ public class TurretAiming {
         if(llTimer.getElapsedTime() >= 15) {
             LLResult result = limelight.limelight.getLatestResult();
             Servos.updateTurretWithPID(0, result.getTx());
+            telemetry.addData("Tx",result.getTx());
             llTimer.resetTimer();
         }
     }
