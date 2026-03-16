@@ -17,16 +17,16 @@ public class servos {
 
     // ---- Physical Conversion Constants ----
     private static final double GEAR_RATIO = 86.0 / 42.0; // Turret Gear / Servo Gear
-    private static final double SERVO_DEGREES_RANGE = 1400.0; // Effective range of a 5-turn servo (5 * 280 deg)
+    private static final double SERVO_DEGREES_RANGE = 355.0; // Effective range of a 5-turn servo (5 * 280 deg)
     private static final double TURRET_CENTER_POS = 0.5; // The raw servo position that corresponds to a 0-degree turret angle.
 
     // SERVO_UNITS_PER_DEGREE: The scaling factor to convert degrees of turret rotation to servo units.
     private static final double SERVO_UNITS_PER_DEGREE = (GEAR_RATIO / SERVO_DEGREES_RANGE);
 
     // ---- PID Constants ----
-    public static final double TURRET_P = 0.12;
+    public static final double TURRET_P = .7;
     public static final double TURRET_I = 0.0;
-    public static final double TURRET_D = 0.015;
+    public static final double TURRET_D = 0.00001;
 
     // ---- PID Controller ----
     private other_helpers pidController = new other_helpers();
@@ -101,28 +101,24 @@ public class servos {
 
 
 
-        double headingError = targetFieldHeadingDeg - robotHeadingDeg;
-        if (Math.abs(headingError) < .5) {
-            setLedColor(LedColor.GREEN);
-        } else if (Math.abs(headingError) < 1) {
-            setLedColor(LedColor.YELLOW);
-        }
-        else setLedColor(LedColor.RED);
+
+
 
 
         // Get the PID correction in degrees
-        double pidCorrectionDeg = pidController.updatePID(headingError, 0);
+        double pidCorrectionDeg = -pidController.updatePID(robotHeadingDeg, targetFieldHeadingDeg);
         
 
-        incrementTurretInDegrees(-pidCorrectionDeg);
+        incrementTurretInDegrees(pidCorrectionDeg);
 
         if (telemetry != null) {
             //telemetry.addData("Target Field Heading", "%.2f", targetFieldHeadingDeg);
-            //telemetry.addData("Turret Field Heading", "%.2f", getTurretFieldAngleDeg(robotHeadingDeg));
+            telemetry.addData("Turret Pos", "%.2f", turretServo.getPosition());
             //telemetry.addData("Robot Current Heading", "%.2f", robotHeadingDeg);
             //telemetry.addData("Heading Error", "%.2f", headingError);
-            telemetry.addData("Heading Error", "%.2f", pidCorrectionDeg);
+            telemetry.addData("Heading Error", "%.2f", robotHeadingDeg);
             telemetry.addData("PID Correction (Deg)", "%.2f", pidCorrectionDeg);
+            telemetry.addData("PID Correction (pos)", "%.2f", pidCorrectionDeg * SERVO_UNITS_PER_DEGREE);
         }
     }
 
@@ -138,14 +134,16 @@ public class servos {
     }
 
     public void incrementTurretInDegrees(double degInc){
-        double curPos = turretServo.getPosition();
-        double degIncrementToPos = degInc * SERVO_UNITS_PER_DEGREE;
-        double newPos = curPos + degIncrementToPos;
-        //if (newPos < TURRET_CENTER_POS + (TURRET_MIN_DEG * SERVO_UNITS_PER_DEGREE)) newPos = TURRET_CENTER_POS + ((TURRET_MAX_DEG - 5) * SERVO_UNITS_PER_DEGREE);
-        //else if (newPos > TURRET_CENTER_POS + (TURRET_MAX_DEG * SERVO_UNITS_PER_DEGREE)) newPos = TURRET_CENTER_POS + ((TURRET_MIN_DEG + 5) * SERVO_UNITS_PER_DEGREE);
-        if(newPos > TURRET_MAX_DEG) newPos = TURRET_MAX_DEG;
-        else if(newPos < TURRET_MIN_DEG) newPos = TURRET_MIN_DEG;
-        turretServo.setPosition(newPos);
+        if(Math.abs(degInc) >= .001) {
+            double curPos = turretServo.getPosition();
+            double degIncrementToPos = degInc * SERVO_UNITS_PER_DEGREE;
+            double newPos = curPos + degIncrementToPos;
+            //if (newPos < TURRET_CENTER_POS + (TURRET_MIN_DEG * SERVO_UNITS_PER_DEGREE)) newPos = TURRET_CENTER_POS + ((TURRET_MAX_DEG - 5) * SERVO_UNITS_PER_DEGREE);
+            //else if (newPos > TURRET_CENTER_POS + (TURRET_MAX_DEG * SERVO_UNITS_PER_DEGREE)) newPos = TURRET_CENTER_POS + ((TURRET_MIN_DEG + 5) * SERVO_UNITS_PER_DEGREE);
+            //if(newPos > TURRET_MAX_DEG * SERVO_UNITS_PER_DEGREE) newPos = TURRET_MAX_DEG * SERVO_UNITS_PER_DEGREE;
+            //else if(newPos < TURRET_MIN_DEG * SERVO_UNITS_PER_DEGREE) newPos = TURRET_MIN_DEG * SERVO_UNITS_PER_DEGREE;
+            turretServo.setPosition(newPos);
+        }
 
     }
 

@@ -185,10 +185,11 @@ public class AutoAimTeleop extends OpMode {
         }
 
 
-        if(aimSwitch && llPollTimer.getElapsedTime() > 20) {
-            turretAimer.LLAim();
+        if(aimSwitch) {
+            turretAimer.LLAim(true);
             llPollTimer.resetTimer();
         }
+        else turretAimer.LLAim(false);
 
 
 
