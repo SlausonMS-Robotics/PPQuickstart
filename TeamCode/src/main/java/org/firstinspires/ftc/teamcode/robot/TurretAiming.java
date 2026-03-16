@@ -29,8 +29,8 @@ public class TurretAiming {
     private static final int redGoalX = 136;
     private static final int redGoalY = 136;
 
-    private static final double minTurretAngle = -110;
-    private static final double maxTurretAngle = 110;
+    private static final double minTurretAngle = -50;
+    private static final double maxTurretAngle = 50;
 
     // ---- Multi-Output Lookup Table Data ----
     // Independent Variable: Distance in meters
@@ -156,13 +156,25 @@ public class TurretAiming {
         }
     }
 
-    public void LLAim(){
-        if(llTimer.getElapsedTime() >= 15) {
-            LLResult result = limelight.limelight.getLatestResult();
-            Servos.updateTurretWithPID(0, result.getTx());
-            telemetry.addData("Tx",result.getTx());
-            llTimer.resetTimer();
+    public void LLAim(boolean updateTurret){
+
+        LLResult result = limelight.limelight.getLatestResult();
+        if(result.isValid()) {
+            telemetry.addData("Tx", result.getTx());
+            double targetFieldHeadingDeg = 0;
+            double robotHeadingDeg = result.getTx();
+            if (updateTurret && Math.abs(robotHeadingDeg) >= .01) {
+                Servos.updateTurretWithPID(0, robotHeadingDeg);
+            }
+            double headingError = targetFieldHeadingDeg - robotHeadingDeg;
+            if (Math.abs(headingError) < .5) {
+                Servos.setLedColor(servos.LedColor.GREEN);
+            } else if (Math.abs(headingError) < 1) {
+                Servos.setLedColor(servos.LedColor.YELLOW);
+            } else Servos.setLedColor(servos.LedColor.RED);
         }
+        else Servos.setLedColor(servos.LedColor.OFF);
+
     }
 
     private double distanceToBlueGoal(double currentX, double currentY) {
