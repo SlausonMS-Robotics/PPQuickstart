@@ -24,6 +24,7 @@ public class AutoAimTeleop extends OpMode {
     private other_helpers helpers;
     private Timer buttonDebounceTimer;
     private Timer llPollTimer;
+    private Timer lockTimer;
     motors robotMotors = new motors();
 
     sensors Sensors = new sensors();
@@ -47,6 +48,7 @@ public class AutoAimTeleop extends OpMode {
     static int CLOSE_SHOOTER_RPM = 2600;
 
     private boolean shot = false;
+    private boolean lock = false;
 
     Follower follower;
 
@@ -67,6 +69,7 @@ public class AutoAimTeleop extends OpMode {
 
         buttonDebounceTimer = new Timer();
         llPollTimer = new Timer();
+        lockTimer = new Timer();
 
         Pose startPose;
         if (PoseStorage.autoFinished) {
@@ -99,10 +102,13 @@ public class AutoAimTeleop extends OpMode {
     public void loop() {
         // Handle state changes for shooting and intake
         if (gamepad1.right_trigger > .2) {
-            robotState = 2;
-            shot = true;
+            if (lock || lockTimer.getElapsedTime() > 750) {
+                robotState = 2;
+                shot = true;
+            }
         } else {
             robotState = previousRobotState;
+            lockTimer.resetTimer();
         }
 
         double scalar = (gamepad1.left_trigger > .2) ? 1.2 : .25;
@@ -186,10 +192,10 @@ public class AutoAimTeleop extends OpMode {
 
 
         if(aimSwitch) {
-            turretAimer.LLAim(true);
+            lock = turretAimer.LLAim(true);
             llPollTimer.resetTimer();
         }
-        else turretAimer.LLAim(false);
+        else lock = turretAimer.LLAim(false);
 
 
 

@@ -156,8 +156,8 @@ public class TurretAiming {
         }
     }
 
-    public void LLAim(boolean updateTurret){
-
+    public boolean LLAim(boolean updateTurret){
+        boolean lock = false;
         LLResult result = limelight.limelight.getLatestResult();
         if(result.isValid()) {
             telemetry.addData("Tx", result.getTx());
@@ -167,14 +167,15 @@ public class TurretAiming {
                 Servos.updateTurretWithPID(0, robotHeadingDeg);
             }
             double headingError = targetFieldHeadingDeg - robotHeadingDeg;
-            if (Math.abs(headingError) < .5) {
+            if (Math.abs(headingError) < .7) {
                 Servos.setLedColor(servos.LedColor.GREEN);
-            } else if (Math.abs(headingError) < 1) {
+                lock = true;
+            } else if (Math.abs(headingError) < 1.25) {
                 Servos.setLedColor(servos.LedColor.YELLOW);
             } else Servos.setLedColor(servos.LedColor.RED);
         }
         else Servos.setLedColor(servos.LedColor.OFF);
-
+        return lock;
     }
 
     private double distanceToBlueGoal(double currentX, double currentY) {
