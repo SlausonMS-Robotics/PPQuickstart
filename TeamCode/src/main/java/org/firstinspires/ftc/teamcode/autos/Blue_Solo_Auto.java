@@ -17,9 +17,9 @@ import org.firstinspires.ftc.teamcode.robot.other_helpers;
 import org.firstinspires.ftc.teamcode.robot.servos;
 import org.firstinspires.ftc.teamcode.robot.states;
 
-@Autonomous(name = "Blue 12 Rear 1 Auto", group = "Autonomous")
+@Autonomous(name = "Blue_Solo_Auto", group = "Autonomous")
 @Configurable // Panels
-public class Blue_12_Rear_1 extends OpMode {
+public class Blue_Solo_Auto extends OpMode {
 
     private String myAllianceColor = "blue";
     private other_helpers helpers;
@@ -59,7 +59,7 @@ public class Blue_12_Rear_1 extends OpMode {
         // Initialize reusable aiming class
         //turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
 
-        paths = new Paths(follower, Paths.AutoPath.AUTO_PATH2); // Build paths from the external Paths class
+        paths = new Paths(follower, Paths.AutoPath.Blue_Solo_Auto); // Build paths from the external Paths class
         turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry, helpers);
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
@@ -106,7 +106,7 @@ public class Blue_12_Rear_1 extends OpMode {
                     //robotMotors.toggleIntake();
                     if (!follower.isBusy()){
                         robotState = 1; //turn intake on
-                        turretAimer.setShooter(1.5);
+                        turretAimer.setShooter(1.35);
                         follower.followPath(paths.Path1,false);
                         setPathState(1);
                         timerCounter = 0;
@@ -127,7 +127,7 @@ public class Blue_12_Rear_1 extends OpMode {
                 break;
             case 2: // grab first set of balls
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path3, .5,false);
+                    follower.followPath(paths.Path3, .45,false);
                     setPathState(3);
                 }
                 break;
@@ -152,7 +152,7 @@ public class Blue_12_Rear_1 extends OpMode {
             case 5: //pick up ball set 2
                 if (!follower.isBusy()) {
 
-                    follower.followPath(paths.Path6, .5,false);
+                    follower.followPath(paths.Path6, .45,false);
                     setPathState(6);
                 }
                 break;
@@ -175,13 +175,13 @@ public class Blue_12_Rear_1 extends OpMode {
                 break;
             case 8: //pickup set 3
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path9, false);
+                    follower.followPath(paths.Path9,0.45, false);
                     setPathState(10);
                 }
                 break;
             case 10: //drive to shoot
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path10, false);
+                    follower.followPath(paths.Path10, true);
                     setPathState(11);
                 }
                 break;
@@ -190,10 +190,17 @@ public class Blue_12_Rear_1 extends OpMode {
                 if (!follower.isBusy()) {
                     shoot();
                     if (pathTimer.getElapsedTimeSeconds() >= 3) {
-                        setPathState(100);
+                        setPathState(12);
                         robotState = 1;
                     }
                     timerCounter++;
+                }
+                break;
+
+            case 12: //drive to finish
+                if (!follower.isBusy()) {
+                    follower.followPath(paths.Path11, false);
+                    setPathState(100);
                 }
                 break;
 
