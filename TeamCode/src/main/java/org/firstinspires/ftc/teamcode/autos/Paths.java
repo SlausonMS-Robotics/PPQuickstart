@@ -149,7 +149,7 @@ public class Paths {
 
                                         new Pose(109.000, 70.000)
                                 )
-                        ).setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(90))
+                        ).setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(0))
 
                         .build();
 
@@ -169,7 +169,7 @@ public class Paths {
                                     new BezierLine(
                                             new Pose(60.000, 84.000),
 
-                                            new Pose(50.000, 84.000)
+                                            new Pose(50.000, 82.000)
                                     )
                             ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
 
@@ -177,9 +177,9 @@ public class Paths {
 
                     Path3 = follower.pathBuilder().addPath(
                                     new BezierLine(
-                                            new Pose(50.000, 84.000),
+                                            new Pose(50.000, 82.000),
 
-                                            new Pose(21.000, 84.000)
+                                            new Pose(21.000, 82.000)
                                     )
                             ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
 
@@ -187,7 +187,7 @@ public class Paths {
 
                     Path4 = follower.pathBuilder().addPath(
                                     new BezierLine(
-                                            new Pose(21.000, 84.000),
+                                            new Pose(21.000, 82.000),
 
                                             new Pose(59.800, 84.000)
                                     )
@@ -209,7 +209,7 @@ public class Paths {
                                     new BezierLine(
                                             new Pose(48.000, 58.000),
 
-                                            new Pose(14.000, 58.000)
+                                            new Pose(12.000, 58.000)
                                     )
                             ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
 
@@ -217,7 +217,7 @@ public class Paths {
 
                     Path7 = follower.pathBuilder().addPath(
                                     new BezierCurve(
-                                            new Pose(14.000, 58.000),
+                                            new Pose(12.000, 58.000),
                                             new Pose(50.000, 60.000),
                                             new Pose(60.000, 83.900)
                                     )
@@ -239,7 +239,7 @@ public class Paths {
                                     new BezierLine(
                                             new Pose(48.000, 36.000),
 
-                                            new Pose(14.000, 36.000)
+                                            new Pose(12.000, 36.000)
                                     )
                             ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
 
@@ -247,21 +247,11 @@ public class Paths {
 
                     Path10 = follower.pathBuilder().addPath(
                                     new BezierLine(
-                                            new Pose(14.000, 36.000),
+                                            new Pose(12.000, 36.000),
 
                                             new Pose(60.000, 84.000)
                                     )
                             ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
-
-                            .build();
-
-                    Path11 = follower.pathBuilder().addPath(
-                                    new BezierLine(
-                                            new Pose(60.000, 84.000),
-
-                                            new Pose(35.000, 70.000)
-                                    )
-                            ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(90))
 
                             .build();
         }
