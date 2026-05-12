@@ -15,7 +15,7 @@ public class states {
                 case 0: //intake off, transfer hold
                     robotMotors.setTransferState(0);
                     robotMotors.setIntakeState(0);
-                    Servos.setIntakeServos(false);
+                    Servos.setIntakeServos(true);
                     break;
                 case 1: //intake on, transfer slow, initial intake
                     robotMotors.setTransferState(2);
@@ -31,6 +31,13 @@ public class states {
                     robotMotors.setTransferState(0);
                     robotMotors.setIntakeState(1);
                     Servos.setIntakeServos(true);
+                    break;
+                case 4: //reversed intake
+                    robotMotors.setTransferState(0);
+                    robotMotors.setIntakeState(-1);
+                    Servos.setIntakeServos(true);
+                    break;
+
 
             }
         }

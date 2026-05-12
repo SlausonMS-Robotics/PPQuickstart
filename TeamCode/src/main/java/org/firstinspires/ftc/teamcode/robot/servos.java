@@ -32,13 +32,13 @@ public class servos {
     private other_helpers pidController = new other_helpers();
 
     // ---- Servos ----
-    private ServoImplEx turretServo, ledServo, intakeServo1, intakeServo2, bouncerServo;
+    private ServoImplEx turretServo, ledServo, intakeServo1, intakeServo2, bouncerServo, intakeLight;
     
     // ---- Telemetry ----
     private Telemetry telemetry;
     static double BOUNCE_POS_1 = .33; //Far
     static double MID_BOUNCE_POS = .42;
-    static double CLOSE_BOUNCE_POS = .52;
+    static double CLOSE_BOUNCE_POS = .54;
 
     public enum LedColor { GREEN, RED, VIOLET, YELLOW, OFF }
 
@@ -51,11 +51,12 @@ public class servos {
         intakeServo1 = hardwareMap.get(ServoImplEx.class, "shservo4"); //left
         intakeServo2 = hardwareMap.get(ServoImplEx.class, "shservo5"); //right
         bouncerServo = hardwareMap.get(ServoImplEx.class, "shservo3");
+        //intakeLight = hardwareMap.get(ServoImplEx.class, "servo0");
 
 
         ledServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
 
-        turretServo.setPosition(.5);
+        //turretServo.setPosition(.5);
         pidController.initPID(TURRET_P, TURRET_I, TURRET_D);
     }
 

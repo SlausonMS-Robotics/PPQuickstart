@@ -22,7 +22,7 @@ public class AutoAimTeleop extends OpMode {
 
     private String myAllianceColor = "blue";
     private other_helpers helpers;
-    private Timer buttonDebounceTimer;
+    private Timer buttonDebounceTimer, intakeCurrentTimer;
     private Timer llPollTimer;
     private Timer lockTimer;
     motors robotMotors = new motors();
@@ -62,7 +62,7 @@ public class AutoAimTeleop extends OpMode {
         turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry, helpers);
         limelight.init(hardwareMap, 3, telemetry, Servos, follower);
         limelight.pollLimelight();
-        Servos.setBouncerServo(.5);
+        //Servos.setBouncerServo(.5);
 
 
 
@@ -70,6 +70,7 @@ public class AutoAimTeleop extends OpMode {
         buttonDebounceTimer = new Timer();
         llPollTimer = new Timer();
         lockTimer = new Timer();
+        intakeCurrentTimer = new Timer();
 
         Pose startPose;
         if (PoseStorage.autoFinished) {
@@ -95,11 +96,37 @@ public class AutoAimTeleop extends OpMode {
 
     @Override
     public void start() {
+
         follower.startTeleopDrive(true);
+        robotState = 1;
+        previousRobotState = 1;
+        turretAimer.setShooter(2.15);
+
     }
 
     @Override
     public void loop() {
+
+        if (gamepad1.y) { //intake control
+                /*
+                if(robotState == 0) robotState = 1;
+                else robotState = 0;
+                buttonDebounceTimer.resetTimer();
+                 */
+            robotState = 4; //reverse intake
+        }
+        else {
+            robotState = previousRobotState;
+        }
+        if (robotMotors.getIntakeCurrent() <= 7 && robotState != 4 ){
+            intakeCurrentTimer.resetTimer();
+            robotState = 1;
+
+        }
+        else if (intakeCurrentTimer.getElapsedTime() > 750 && robotState == 1){
+            robotState = 0; //turn off intake if intake motor current is high for longer than x time
+        }
+
         // Handle state changes for shooting and intake
         if (gamepad1.right_trigger > .2) {
             if (lock || lockTimer.getElapsedTime() > 750) {
@@ -108,10 +135,13 @@ public class AutoAimTeleop extends OpMode {
             }
         } else {
             robotState = previousRobotState;
-            lockTimer.resetTimer();
+            if(lockTimer.getElapsedTime()>750) {
+                lockTimer.resetTimer();
+            }
+            shot = false;
         }
 
-        double scalar = (gamepad1.left_trigger > .2) ? 1.2 : .25;
+        double scalar = (gamepad1.left_trigger > .2) ? 1.3 : .3;
 
 
         if (Sensors.getCSDistanceMM() < 50 && robotState != 2){
@@ -120,9 +150,7 @@ public class AutoAimTeleop extends OpMode {
                 shot = false;
 
         }
-        else if(robotState != 2 && shot) {
-            robotState = 1;
-        }
+
 
         if(gamepad1.start){
             robotMotors.setShooterVelocity(0);
@@ -133,20 +161,16 @@ public class AutoAimTeleop extends OpMode {
         }
 
         if (buttonDebounceTimer.getElapsedTime() >= 300) {
-            if (gamepad1.y) {
-                if(robotState == 0) robotState = 1;
-                else robotState = 0;
-                buttonDebounceTimer.resetTimer();
-            }
+
             if(gamepad1.x){
 
-                turretAimer.setShooter(1.25); // sets rpm and bouncer position to x meters
+                turretAimer.setShooter(1.2); // sets rpm and bouncer position to x meters
 
                 buttonDebounceTimer.resetTimer();
             }
 
             if(gamepad1.dpad_up){
-                aimSwitch = !aimSwitch;
+                //aimSwitch = !aimSwitch;
 
 
             }
@@ -161,7 +185,7 @@ public class AutoAimTeleop extends OpMode {
             if(gamepad1.a){
                 //turretAimer.updatePoseFromLimelight();
                 //telemetry.addData("IMU Yaw", Sensors.getImuYawDeg());
-                turretAimer.setShooter(2.25); // sets rpm and bouncer position to x meters
+                turretAimer.setShooter(2.15); // sets rpm and bouncer position to x meters
                 buttonDebounceTimer.resetTimer();
             }
             if(gamepad1.dpad_left){
@@ -177,15 +201,15 @@ public class AutoAimTeleop extends OpMode {
                 buttonDebounceTimer.resetTimer();
             }
         }
-        if (robotState != 2) previousRobotState = robotState;
+        if (robotState != 2 && robotState != 4) previousRobotState = robotState;
 
-        if (buttonDebounceTimer.getElapsedTime() >= 150) {
+        if (buttonDebounceTimer.getElapsedTime() >= 100) {
             if (gamepad1.right_bumper){
-                Servos.incrementTurretInDegrees(-3 * scalar);
+                Servos.incrementTurretInDegrees(-5 * scalar);
                 buttonDebounceTimer.resetTimer();
             }
             if (gamepad1.left_bumper){
-                Servos.incrementTurretInDegrees(3 * scalar);
+                Servos.incrementTurretInDegrees(5 * scalar);
                 buttonDebounceTimer.resetTimer();
             }
         }
@@ -212,6 +236,7 @@ public class AutoAimTeleop extends OpMode {
         //telemetry.addData("Bot Pose", follower.getPose());
         telemetry.addData("Bouncer Pos", Servos.getBouncerServoPos());
         telemetry.addData("Sensor Dist", Sensors.getCSDistanceMM());
+        telemetry.addData("Intake Current", robotMotors.getIntakeCurrent());
         telemetry.update();
     }
 

@@ -5,6 +5,8 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+
 public class motors {
 
     // ---- Constants ----
@@ -101,7 +103,17 @@ public class motors {
                 setIntakePower(0);
                 transferState = 0;
                 break;
+            case -1:
+                setIntakePower(-1);
+                transferState = 0;
+                break;
+
         }
+    }
+
+    public double getIntakeCurrent(){
+        double current = intakeMotor.getCurrent(CurrentUnit.AMPS);
+        return current;
     }
 
     public void setTransferState(int state) {
