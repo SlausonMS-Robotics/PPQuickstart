@@ -67,7 +67,7 @@ public class Paths {
                                 new BezierLine(
                                         new Pose(94.000, 84.000),
 
-                                        new Pose(123.000, 84.000)
+                                        new Pose(127.000, 84.000)
                                 )
                         ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
 
@@ -75,7 +75,7 @@ public class Paths {
 
                 Path4 = follower.pathBuilder().addPath(
                                 new BezierLine(
-                                        new Pose(123.000, 84.000),
+                                        new Pose(127.000, 84.000),
 
                                         new Pose(84.200, 84.000)
                                 )
@@ -97,7 +97,7 @@ public class Paths {
                                 new BezierLine(
                                         new Pose(96.000, 58.000),
 
-                                        new Pose(130.000, 58.000)
+                                        new Pose(134.000, 58.000)
                                 )
                         ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
 
@@ -105,7 +105,7 @@ public class Paths {
 
                 Path7 = follower.pathBuilder().addPath(
                                 new BezierCurve(
-                                        new Pose(130.000, 58.000),
+                                        new Pose(134.000, 58.000),
                                         new Pose(94.000, 60.000),
                                         new Pose(84.000, 83.900)
                                 )
@@ -119,7 +119,7 @@ public class Paths {
                                         new Pose(94.000, 64.000),
                                         new Pose(96.000, 36.000)
                                 )
-                        ).setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(0))
+                        ).setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(-1))
 
                         .build();
 
@@ -127,7 +127,7 @@ public class Paths {
                                 new BezierLine(
                                         new Pose(96.000, 36.000),
 
-                                        new Pose(130.000, 36.000)
+                                        new Pose(134.000, 36.000)
                                 )
                         ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
 
@@ -135,7 +135,7 @@ public class Paths {
 
                 Path10 = follower.pathBuilder().addPath(
                                 new BezierLine(
-                                        new Pose(130.000, 36.000),
+                                        new Pose(134.000, 36.000),
 
                                         new Pose(84.000, 84.000)
                                 )
@@ -152,6 +152,7 @@ public class Paths {
                         ).setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(0))
 
                         .build();
+                break;
 
                 case Blue_Solo_Auto:
                 // Copy and paste your new path definitions from your external tool here
@@ -254,6 +255,7 @@ public class Paths {
                             ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
 
                             .build();
+                    break;
         }
     }
 

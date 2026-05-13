@@ -25,7 +25,7 @@ public class Blue_Solo_Auto extends OpMode {
     private other_helpers helpers;
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
-    private int pathState; // Current autonomous path state (state machine)
+    private int pathState = 0; // Current autonomous path state (state machine)
     private Paths paths; // Paths defined in the Paths class
 
     // Robot hardware and logic classes
@@ -107,8 +107,8 @@ public class Blue_Solo_Auto extends OpMode {
                     if (!follower.isBusy()){
                         robotState = 1; //turn intake on
                         turretAimer.setShooter(1.35);
-                        follower.followPath(paths.Path1,false);
-                        setPathState(1);
+                        follower.followPath(paths.Path1,true);
+                        setPathState(pathState++);
                         timerCounter = 0;
                      }
 
@@ -120,7 +120,7 @@ public class Blue_Solo_Auto extends OpMode {
 
                     if (pathTimer.getElapsedTimeSeconds() >= 3) {
                         follower.followPath(paths.Path2, false);
-                        setPathState(2);
+                        setPathState(pathState++);
                          robotState = 1;                   }
                     timerCounter++;
                 }
@@ -128,13 +128,13 @@ public class Blue_Solo_Auto extends OpMode {
             case 2: // grab first set of balls
                 if (!follower.isBusy()) {
                     follower.followPath(paths.Path3, .45,false);
-                    setPathState(3);
+                    setPathState(pathState++);
                 }
                 break;
             case 3: //drive back to shoot
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path4, false);
-                    setPathState(4);
+                    follower.followPath(paths.Path4, true);
+                    setPathState(pathState++);
                     timerCounter = 0;
                 }
                 break;
@@ -143,7 +143,7 @@ public class Blue_Solo_Auto extends OpMode {
                     shoot();
                     if (pathTimer.getElapsedTimeSeconds() >= 3) {
                         follower.followPath(paths.Path5, false);
-                        setPathState(5);
+                        setPathState(pathState++);
                         robotState = 1;
                     }
                 timerCounter++;
@@ -153,13 +153,13 @@ public class Blue_Solo_Auto extends OpMode {
                 if (!follower.isBusy()) {
 
                     follower.followPath(paths.Path6, .45,false);
-                    setPathState(6);
+                    setPathState(pathState++);
                 }
                 break;
             case 6: //drive to shoot pos
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path7, false);
-                    setPathState(7);
+                    follower.followPath(paths.Path7, true);
+                    setPathState(pathState++);
                 }
                 break;
             case 7: //shoot ball
@@ -167,7 +167,7 @@ public class Blue_Solo_Auto extends OpMode {
                     shoot();
                     if (pathTimer.getElapsedTimeSeconds() >= 3) {
                         follower.followPath(paths.Path8, false);
-                        setPathState(8);
+                        setPathState(pathState++);
                         robotState = 1;
                     }
                     timerCounter++;
@@ -176,39 +176,35 @@ public class Blue_Solo_Auto extends OpMode {
             case 8: //pickup set 3
                 if (!follower.isBusy()) {
                     follower.followPath(paths.Path9,0.45, false);
-                    setPathState(10);
+                    setPathState(pathState++);
                 }
                 break;
-            case 10: //drive to shoot
+            case 9: //drive to shoot
                 if (!follower.isBusy()) {
                     follower.followPath(paths.Path10, true);
-                    setPathState(11);
+                    setPathState(pathState++);
                 }
                 break;
 
-            case 11: //shoot set 3
+            case 10: //shoot set 3
                 if (!follower.isBusy()) {
                     shoot();
                     if (pathTimer.getElapsedTimeSeconds() >= 3) {
-                        setPathState(12);
+                        setPathState(pathState++);
                         robotState = 1;
                     }
                     timerCounter++;
                 }
                 break;
 
-            case 12: //drive to finish
+            case 11: //drive to finish
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path11, false);
-                    setPathState(100);
+                    follower.followPath(paths.Path11, true);
+                    setPathState(pathState++);
                 }
                 break;
 
-                case 100:
-                if (!follower.isBusy()) {
-                robotState = 0;
-                }
-                break;
+
         }
 
         robotStateController.setRobotState(robotState, Servos, robotMotors);
