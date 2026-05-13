@@ -37,10 +37,10 @@ public class TurretAiming {
     private static final double[] LOOKUP_DISTANCES = {1.0, 1.5, 2.0, 2.5, 3.0, 3.5};
     
     // Output 1: Flywheel RPM
-    private static final double[] LOOKUP_RPMS = {2200, 2550, 2700, 3150, 3400, 3550};
+    private static final double[] LOOKUP_RPMS = {2225, 2575, 2725, 3175, 3425, 3575};
     
     // Output 2: Bouncer Servo Position
-    private static final double[] LOOKUP_BOUNCER_POS = {0.56, 0.53, 0.49, 0.46, 0.41, 0.38};
+    private static final double[] LOOKUP_BOUNCER_POS = {0.58, 0.55, 0.51, 0.48, 0.43, 0.4};
 
     public TurretAiming(Follower follower, limelight3A limelight, servos Servos, motors robotMotors, Telemetry telemetry, other_helpers helpers) {
         this.follower = follower;
@@ -123,7 +123,7 @@ public class TurretAiming {
     }
 
     public boolean updateLimelightAiming() {
-        if (limelight == null || llTimer.getElapsedTime() < 10) return false;
+        if (limelight == null || llTimer.getElapsedTime() < 20) return false;
         llTimer.resetTimer();
         limelight.pollLimelight();
 
@@ -167,10 +167,10 @@ public class TurretAiming {
                 Servos.updateTurretWithPID(0, robotHeadingDeg);
             }
             double headingError = targetFieldHeadingDeg - robotHeadingDeg;
-            if (Math.abs(headingError) < .7) {
+            if (Math.abs(headingError) < 1) {
                 Servos.setLedColor(servos.LedColor.GREEN);
                 lock = true;
-            } else if (Math.abs(headingError) < 1.25) {
+            } else if (Math.abs(headingError) < 1.5) {
                 Servos.setLedColor(servos.LedColor.YELLOW);
             } else Servos.setLedColor(servos.LedColor.RED);
         }
