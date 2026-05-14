@@ -18,10 +18,10 @@ import org.firstinspires.ftc.teamcode.robot.motors;
 import org.firstinspires.ftc.teamcode.robot.other_helpers;
 import org.firstinspires.ftc.teamcode.robot.servos;
 import org.firstinspires.ftc.teamcode.robot.states;
-@Disabled
-@Autonomous(name = "Blue_Auto_Back", group = "Autonomous")
+//@Disabled
+@Autonomous(name = "Auto_Back", group = "Autonomous")
 @Configurable // Panels
-public class Blue_Auto_Back extends OpMode {
+public class Auto_Back extends OpMode {
 
     private String myAllianceColor = "blue";
     private other_helpers helpers;
@@ -37,6 +37,8 @@ public class Blue_Auto_Back extends OpMode {
     private static double midDist = 1.35;
     private static double shortDist = .8;
     private static double longDist = 3.2;
+    private static double slowPower = .45;
+    private static int shootPause = 3000;
     private boolean shooting = false;
     private servos Servos;
     private limelight3A limelight;
@@ -65,7 +67,7 @@ public class Blue_Auto_Back extends OpMode {
         // Initialize reusable aiming class
         //turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
 
-        paths = new Paths(follower, Paths.AutoPath.Blue_Solo_Auto); // Build paths from the external Paths class
+
         turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry, helpers);
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
@@ -73,6 +75,32 @@ public class Blue_Auto_Back extends OpMode {
         actionTimer = new Timer();
         opmodeTimer = new Timer();
         shootTimer = new Timer();
+        paths = new Paths(follower, Paths.AutoPath.Blue_Solo_Auto); // Build paths from the external Paths class
+    }
+    @Override
+    public void init_loop() {
+        if(actionTimer.getElapsedTime() > 650){
+
+            if(gamepad1.a || gamepad1.b || gamepad1.y || gamepad1.x){
+                if("blue".equals(myAllianceColor)){
+                    myAllianceColor = "red";
+                    paths = new Paths(follower, Paths.AutoPath.Red_Solo_Auto); // Build paths from the external Paths class
+                }
+                else {
+                    myAllianceColor = "blue";
+                    paths = new Paths(follower, Paths.AutoPath.Blue_Solo_Auto); // Build paths from the external Paths class
+                }
+                actionTimer.resetTimer();
+
+            }
+        }
+        if(actionTimer.getElapsedTime() > 5000){
+            telemetry.speak(myAllianceColor);
+            gamepad1.rumble(1000);
+            actionTimer.resetTimer();
+        }
+        telemetry.addData("Alliance", myAllianceColor);
+        telemetry.update();
     }
 
     @Override
@@ -80,7 +108,12 @@ public class Blue_Auto_Back extends OpMode {
         pathTimer.resetTimer();
         actionTimer.resetTimer();
         opmodeTimer.resetTimer();
+        shootTimer.resetTimer();
+        robotState = 1; //intake on
+        turretAimer.setShooter(midDist); //spin up flywheel
+        turretAimer.zeroTurret(); //set turret to straight ahead
     }
+
 
     @Override
     public void loop() {
@@ -105,9 +138,7 @@ public class Blue_Auto_Back extends OpMode {
     }
 
     public void autonomousPathUpdate() throws InterruptedException {
-        robotState = 1; //intake on
-        turretAimer.setShooter(midDist); //spin up flywheel
-        turretAimer.zeroTurret(); //set turret to straight ahead
+
         switch (pathState) {
             case 0: //drive up to shooting position and shoot
 
@@ -135,7 +166,7 @@ public class Blue_Auto_Back extends OpMode {
                 break;
             case 2: // grab first set of balls
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path3, .5,false);
+                    follower.followPath(paths.Path3, slowPower,false);
                     setPathState(pathState++);
                 }
                 break;
@@ -156,7 +187,7 @@ public class Blue_Auto_Back extends OpMode {
             case 5: //pick up ball set 2
                 if (!follower.isBusy()) {
 
-                    follower.followPath(paths.Path6, .5,false);
+                    follower.followPath(paths.Path6, slowPower,false);
                     setPathState(pathState++);
                 }
                 break;
@@ -177,7 +208,7 @@ public class Blue_Auto_Back extends OpMode {
                 break;
             case 8: //pickup set 3
                 if (!follower.isBusy()) {
-                    follower.followPath(paths.Path9,0.5, false);
+                    follower.followPath(paths.Path9,slowPower, false);
                     setPathState(pathState++);
                 }
                 break;
@@ -235,7 +266,7 @@ public class Blue_Auto_Back extends OpMode {
             robotState = 2; //set shooting state
             shooting = true;
         }
-        if(shootTimer.getElapsedTime() >= 2500){
+        if(shootTimer.getElapsedTime() >= shootPause){
             robotState = 1;
             shooting = false;
             shootTimer.resetTimer();
