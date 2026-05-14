@@ -4,6 +4,7 @@ package org.firstinspires.ftc.teamcode.teleops;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
@@ -17,7 +18,7 @@ import org.firstinspires.ftc.teamcode.robot.servos;
  * @author Baron Henderson - 20077 The Indubitables
  * @version 2.0, 12/30/2024
  */
-
+@Disabled
 @TeleOp(name = "Example Field-Centric Teleop", group = "Examples")
 public class ExampleFieldCentricTeleop extends OpMode {
     // You'll need to tune these values for your robot.

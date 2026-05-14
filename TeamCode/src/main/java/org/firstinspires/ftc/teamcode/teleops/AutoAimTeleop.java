@@ -33,12 +33,12 @@ public class AutoAimTeleop extends OpMode {
     states robotStateController = new states();
     private TurretAiming turretAimer;
 
-    private int robotState = 0;
+    private int robotState = 1;
     private boolean aimSwitch = true;
     private boolean useOdomTracking = true;
 
 
-    private int previousRobotState = 0;
+    private int previousRobotState = 1;
     private int buttonCount = 0;
     static double FAR_BOUNCE_POS = .33;
     static double MID_BOUNCE_POS = .42;
@@ -101,12 +101,14 @@ public class AutoAimTeleop extends OpMode {
         robotState = 1;
         previousRobotState = 1;
         turretAimer.setShooter(2.15);
+        turretAimer.zeroTurret();
 
     }
 
     @Override
     public void loop() {
         double scalar = (gamepad1.left_trigger > .2) ? 1.3 : .3;
+        //robotState = 1;
         if (gamepad1.y) { //intake control
                 /*
                 if(robotState == 0) robotState = 1;
@@ -117,13 +119,19 @@ public class AutoAimTeleop extends OpMode {
 
         }
         else {
-            if (robotMotors.getIntakeCurrent() <= 7 && robotState != 4) {
+
+            if (robotMotors.getIntakeCurrent() <= 1 && robotState != 4) {
                 intakeCurrentTimer.resetTimer();
                 robotState = 1;
 
-            } else if (intakeCurrentTimer.getElapsedTime() > 750 && robotState == 1) {
-                robotState = 0; //turn off intake if intake motor current is high for longer than x time
+            } else if (intakeCurrentTimer.getElapsedTime() > 1000 ) {
+                robotState = 4; //turn off intake if intake motor current is high for longer than x time
+                gamepad1.rumble(1000); // rumble for 0.5 seconds
+                previousRobotState = robotState;
+                intakeCurrentTimer.resetTimer();
             }
+
+
 
             // Handle state changes for shooting and intake
             if (gamepad1.right_trigger > .2) {
@@ -142,7 +150,7 @@ public class AutoAimTeleop extends OpMode {
 
 
 
-            if (Sensors.getCSDistanceMM() < 50 && robotState != 2) {
+            if (Sensors.getCSDistanceMM() < 50 && robotState == 1) {
 
                 robotState = 3;
                 shot = false;
@@ -155,7 +163,7 @@ public class AutoAimTeleop extends OpMode {
             }
 
             if (gamepad1.back) {
-                robotMotors.setShooterVelocity(robotMotors.getShooterVelocityFromRPM(6000));
+                //robotMotors.setShooterVelocity(robotMotors.getShooterVelocityFromRPM(6000));
             }
 
             if (buttonDebounceTimer.getElapsedTime() >= 300) {
@@ -199,16 +207,14 @@ public class AutoAimTeleop extends OpMode {
                     buttonDebounceTimer.resetTimer();
                 }
             }
-            if (robotState != 2 && robotState != 4) previousRobotState = robotState;
+
 
             if (buttonDebounceTimer.getElapsedTime() >= 100) {
-                if (gamepad1.right_bumper) {
-                    Servos.incrementTurretInDegrees(-5 * scalar);
-                    buttonDebounceTimer.resetTimer();
-                }
                 if (gamepad1.left_bumper) {
-                    Servos.incrementTurretInDegrees(5 * scalar);
-                    buttonDebounceTimer.resetTimer();
+                    robotState = 1;
+                }
+                else if (gamepad1.right_bumper) {
+                    robotState = 0;
                 }
             }
 
@@ -218,6 +224,7 @@ public class AutoAimTeleop extends OpMode {
                 llPollTimer.resetTimer();
             } else lock = turretAimer.LLAim(false);
             robotStateController.setRobotState(robotState, Servos, robotMotors);
+            if (robotState != 2 && robotState != 4) previousRobotState = robotState;
 
         }
 
@@ -235,6 +242,7 @@ public class AutoAimTeleop extends OpMode {
         telemetry.addData("Bouncer Pos", Servos.getBouncerServoPos());
         telemetry.addData("Sensor Dist", Sensors.getCSDistanceMM());
         telemetry.addData("Intake Current", robotMotors.getIntakeCurrent());
+        telemetry.addData("Robot State", robotState);
         telemetry.update();
     }
 

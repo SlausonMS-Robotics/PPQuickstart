@@ -5,6 +5,7 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -21,7 +22,7 @@ import org.firstinspires.ftc.teamcode.robot.servos;
  * @version 2.0, 12/30/2024
  */
 //wifi direct password = 4EaUU37n
-
+@Disabled
 @TeleOp(name = "Field-Centric Auto Aim Teleop", group = "Examples")
 public class FieldCentricTeleopLLMegaTags extends OpMode {
     // With a 5-turn servo, the P gain needs to be much smaller. Start here for tuning.

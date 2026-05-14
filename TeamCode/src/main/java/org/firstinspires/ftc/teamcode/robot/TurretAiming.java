@@ -149,6 +149,10 @@ public class TurretAiming {
         }
     }
 
+    public void zeroTurret(){
+        Servos.setTurretServoPos(.5);
+    }
+
     private void updateTelemetry() {
         if (telemetry != null) {
             telemetry.addData("Current Pose", follower.getPose());
