@@ -138,7 +138,7 @@ public class Blue_Solo_Auto extends OpMode {
                     //robotMotors.toggleIntake();
                     if (!follower.isBusy()){
 
-                        follower.followPath(paths.Path1,true);
+                        follower.followPath(paths.Path1,false);
                         setPathState(pathState++);
                         timerCounter = 0;
                      }

@@ -123,7 +123,7 @@ public class AutoAimTeleop extends OpMode {
                 robotState = 1;
 
             } else if (intakeCurrentTimer.getElapsedTime() > 1000 ) {
-                robotState = 4; //turn off intake if intake motor current is high for longer than x time
+                //robotState = 4; //turn off intake if intake motor current is high for longer than x time
                 gamepad1.rumble(1000); // rumble for 0.5 seconds
                 previousRobotState = robotState;
                 intakeCurrentTimer.resetTimer();
