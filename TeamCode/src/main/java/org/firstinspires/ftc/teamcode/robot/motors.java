@@ -103,6 +103,10 @@ public class motors {
                 setIntakePower(0);
                 transferState = 0;
                 break;
+            case 2:
+                setIntakePower(.15);
+                transferState = 0;
+                break;
             case -1:
                 setIntakePower(-1);
                 transferState = 0;

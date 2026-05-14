@@ -32,7 +32,7 @@ public class servos {
     private other_helpers pidController = new other_helpers();
 
     // ---- Servos ----
-    private ServoImplEx turretServo, ledServo, intakeServo1, intakeServo2, bouncerServo, intakeLight;
+    private ServoImplEx turretServo, ledServo, intakeServo1, intakeServo2, intakeServo3, bouncerServo, intakeLight;
     
     // ---- Telemetry ----
     private Telemetry telemetry;
@@ -50,6 +50,7 @@ public class servos {
         ledServo = hardwareMap.get(ServoImplEx.class, "shservo1");
         intakeServo1 = hardwareMap.get(ServoImplEx.class, "shservo4"); //left
         intakeServo2 = hardwareMap.get(ServoImplEx.class, "shservo5"); //right
+        intakeServo3 = hardwareMap.get(ServoImplEx.class, "shservo2"); //inner right
         bouncerServo = hardwareMap.get(ServoImplEx.class, "shservo3");
         //intakeLight = hardwareMap.get(ServoImplEx.class, "servo0");
 
@@ -127,10 +128,12 @@ public class servos {
         if(on){
             intakeServo1.setPosition(1);
             intakeServo2.setPosition(0);
+            intakeServo3.setPosition(1);
         }
         else{
             intakeServo1.setPosition(.5);
             intakeServo2.setPosition(.5);
+            intakeServo3.setPosition(.5);
         }
     }
 
