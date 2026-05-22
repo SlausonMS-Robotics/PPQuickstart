@@ -8,6 +8,7 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.robot.PoseStorage;
 import org.firstinspires.ftc.teamcode.robot.TurretAiming;
@@ -17,11 +18,11 @@ import org.firstinspires.ftc.teamcode.robot.other_helpers;
 import org.firstinspires.ftc.teamcode.robot.servos;
 import org.firstinspires.ftc.teamcode.robot.states;
 
-@Autonomous(name = "Blue_Solo_Auto", group = "Autonomous")
+@Autonomous(name = "Red_Leave_Auto", group = "Autonomous")
 @Configurable // Panels
-public class Blue_Solo_Auto extends OpMode {
+public class Red_Leave_Auto extends OpMode {
 
-    private String myAllianceColor = "blue";
+    private String myAllianceColor = "red";
     private other_helpers helpers;
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
@@ -32,12 +33,12 @@ public class Blue_Solo_Auto extends OpMode {
     private motors robotMotors;
     states robotStateController = new states();
     private int robotState = 0;
-    private servos Servos;
-    private limelight3A limelight;
-    private TurretAiming turretAimer;
     private static double midDist = 1.35;
     private static double slowPower = .45;
     private static int shootPause = 3000;
+    private servos Servos;
+    private limelight3A limelight;
+    private TurretAiming turretAimer;
 
     private Timer pathTimer, actionTimer, opmodeTimer;
 
@@ -56,45 +57,19 @@ public class Blue_Solo_Auto extends OpMode {
 
         // Initialize path follower
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(48, 8, Math.toRadians(90)));
+        follower.setStartingPose(new Pose(96, 8, Math.toRadians(90)));
         limelight.init(hardwareMap, 0, telemetry, Servos, follower);
 
         // Initialize reusable aiming class
         //turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry);
 
-        paths = new Paths(follower, Paths.AutoPath.Blue_Solo_Auto); // Build paths from the external Paths class
+        paths = new Paths(follower, Paths.AutoPath.Red_Leave_Auto); // Build paths from the external Paths class
         turretAimer = new TurretAiming(follower, limelight, Servos, robotMotors, telemetry, helpers);
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
         pathTimer = new Timer();
         actionTimer = new Timer();
         opmodeTimer = new Timer();
-    }
-
-    @Override
-    public void init_loop() {
-        if(actionTimer.getElapsedTime() > 650){
-
-            if(gamepad1.a || gamepad1.b || gamepad1.y || gamepad1.x){
-                if("blue".equals(myAllianceColor)){
-                    myAllianceColor = "red";
-                    paths = new Paths(follower, Paths.AutoPath.Red_Solo_Auto); // Build paths from the external Paths class
-                }
-                else {
-                    myAllianceColor = "blue";
-                    paths = new Paths(follower, Paths.AutoPath.Blue_Solo_Auto); // Build paths from the external Paths class
-                }
-                actionTimer.resetTimer();
-
-            }
-        }
-        if(actionTimer.getElapsedTime() > 5000){
-            telemetry.speak(myAllianceColor);
-            gamepad1.rumble(1000);
-            actionTimer.resetTimer();
-        }
-        telemetry.addData("Alliance", myAllianceColor);
-        telemetry.update();
     }
 
     @Override
@@ -111,7 +86,7 @@ public class Blue_Solo_Auto extends OpMode {
     public void loop() {
         //if (opmodeTimer.getElapsedTime() > 500) {delay a little to make sure robot is ready to shoot
         //robotMotors.shoot();
-    //}
+        //}
 
         follower.update(); // Update Pedro Pathing
         //turretAimer.update(myAllianceColor, false); // Update turret aim and shooter speed continuously
@@ -134,16 +109,17 @@ public class Blue_Solo_Auto extends OpMode {
             case 0: //drive up to shooting position
 
                 //if(pathTimer.getElapsedTime() > 2000) {
-                    //robotMotors.stopTransfer();
-                    //robotMotors.toggleIntake();
-                    if (!follower.isBusy()){
+                //robotMotors.stopTransfer();
+                //robotMotors.toggleIntake();
+                if (!follower.isBusy()){
 
-                        follower.followPath(paths.Path1,false);
-                        setPathState(1);
-                        timerCounter = 0;
-                     }
+                    follower.followPath(paths.Path1,slowPower,true);
+                    setPathState(100);
+                    timerCounter = 0;
+                robotState = 0;
+                }
 
-               // }
+                // }
                 break;
             case 1: //shoot + drive to grab ball set 1
                 if (!follower.isBusy()) {
@@ -152,7 +128,7 @@ public class Blue_Solo_Auto extends OpMode {
                     if (pathTimer.getElapsedTimeSeconds() >= 3) {
                         follower.followPath(paths.Path2, false);
                         setPathState(2);
-                         robotState = 1;
+                        robotState = 1;
                     }
                     timerCounter++;
                 }
@@ -178,7 +154,7 @@ public class Blue_Solo_Auto extends OpMode {
                         setPathState(5);
                         robotState = 1;
                     }
-                timerCounter++;
+                    timerCounter++;
                 }
                 break;
             case 5: //pick up ball set 2

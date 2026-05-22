@@ -117,7 +117,7 @@ public class AutoAimTeleop extends OpMode {
 
         }
         else {
-
+            /*
             if (robotMotors.getIntakeCurrent() <= 1 && robotState != 4) {
                 intakeCurrentTimer.resetTimer();
                 robotState = 1;
@@ -128,6 +128,8 @@ public class AutoAimTeleop extends OpMode {
                 previousRobotState = robotState;
                 intakeCurrentTimer.resetTimer();
             }
+
+             */
 
 
 
