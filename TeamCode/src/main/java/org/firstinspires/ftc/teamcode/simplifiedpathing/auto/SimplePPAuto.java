@@ -4,51 +4,42 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.simplifiedpathing.paths.SimplePathLoader;
 import org.firstinspires.ftc.teamcode.simplifiedpathing.actions.Action;
+import org.firstinspires.ftc.teamcode.simplifiedpathing.actions.RobotActionLibrary;
 import org.firstinspires.ftc.teamcode.simplifiedpathing.actions.SimpleActions.*;
 import org.firstinspires.ftc.teamcode.simplifiedpathing.follower.SimplifiedFollower;
+import org.firstinspires.ftc.teamcode.simplifiedpathing.robot.SimpleStates.State;
 import org.firstinspires.ftc.teamcode.simplifiedpathing.robot.SimplifiedRobot;
 
 import java.util.Map;
 
-@Autonomous(name = "Decoupled .PP Auto", group = "Simplified")
+@Autonomous(name = "Library Action Auto", group = "Simplified")
 public class SimplePPAuto extends LinearOpMode {
     SimplifiedRobot robot = new SimplifiedRobot();
     SimplifiedFollower follower;
+    RobotActionLibrary actions;
 
     @Override
     public void runOpMode() {
         robot.init(hardwareMap);
         follower = new SimplifiedFollower(robot);
+        actions = new RobotActionLibrary(robot);
 
-        // 1. Load the individual paths from the .pp file into a map
-        // The keys match the names you gave the paths in the .pp editor (e.g., "Path 1", "Path 2")
+        // 1. Load the individual paths from the .pp file
         Map<String, Action> paths = SimplePathLoader.loadPaths("paths1.pp", follower, robot);
 
-        // 2. Build your manual sequence
+        // 2. Build your manual sequence using the library
         Action autoSequence = new SequentialAction(
-            // Path 1 is BLOCKING (code waits here until Path 1 is done)
-            paths.getOrDefault("Path 1", new InstantAction(() -> {})),
-            
-            // This section is NON-BLOCKING:
-            // It runs "Path 2" AND the "Intake Sequence" at the same time.
-            new ParallelAction(
-                paths.getOrDefault("Path 2", new InstantAction(() -> {})),
-                new SequentialAction(
-                    new WaitAction(0.5), // Wait a half second into the drive
-                    new InstantAction(() -> robot.motors.intakeMotor.setPower(1.0)),
-                    new WaitAction(1.5),
-                    new InstantAction(() -> robot.motors.intakeMotor.setPower(0))
-                )
-            ),
-            
-            new WaitAction(1.0),
-            new InstantAction(() -> robot.motors.setShooterVelocity(0))
+            actions.state(State.INTAKE_ON),        // Simple reusable action
+            paths.get("Path 1"),
+            actions.smartIntake(3.0),              // Complex "Macro" action
+            paths.get("Path 2"),
+            actions.spinAndShoot(3000, 2.0)       // Multi-step routine
         );
 
         waitForStart();
 
         while (opModeIsActive() && !autoSequence.run()) {
-            telemetry.addData("Status", "Running Decoupled Sequence");
+            telemetry.addData("Status", "Running Library Sequence");
             telemetry.update();
         }
 

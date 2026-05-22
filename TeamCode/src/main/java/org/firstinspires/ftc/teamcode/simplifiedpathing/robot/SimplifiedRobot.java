@@ -10,6 +10,7 @@ public class SimplifiedRobot {
     public SimpleSensors sensors = new SimpleSensors();
     public SimpleServos servos = new SimpleServos();
     public SimpleLimelight limelight = new SimpleLimelight();
+    public SimpleStates states = new SimpleStates(this);
 
     public void init(HardwareMap hardwareMap) {
         motors.init(hardwareMap);
