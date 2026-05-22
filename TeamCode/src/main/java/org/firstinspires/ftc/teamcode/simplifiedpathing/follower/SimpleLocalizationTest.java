@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.simplifiedpathing;
+package org.firstinspires.ftc.teamcode.simplifiedpathing.follower;
 
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;

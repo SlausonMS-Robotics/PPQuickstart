@@ -5,10 +5,11 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.simplifiedpathing.robot.SimpleTurretAimer;
-import org.firstinspires.ftc.teamcode.simplifiedpathing.robot.SimplifiedFollower;
+import org.firstinspires.ftc.teamcode.simplifiedpathing.follower.SimplifiedFollower;
 import org.firstinspires.ftc.teamcode.simplifiedpathing.robot.SimplifiedRobot;
 
 @TeleOp(name = "Simple Auto Aim Teleop", group = "Simplified")
@@ -34,12 +35,13 @@ public class SimpleAutoAimTeleop extends LinearOpMode {
             robot.sensors.pinpoint.update();
             Pose2D pose = robot.sensors.pinpoint.getPosition();
 
-            // Drive Control
+            // Drive Control (Field Centric)
             double speedScalar = gamepad1.left_trigger > 0.2 ? 1.0 : 0.5;
-            follower.drive(
+            follower.driveFieldCentric(
                 -gamepad1.left_stick_y * speedScalar,
                 -gamepad1.left_stick_x * speedScalar,
-                -gamepad1.right_stick_x * speedScalar
+                -gamepad1.right_stick_x * speedScalar,
+                pose.getHeading(AngleUnit.RADIANS)
             );
 
             // Intake Logic
@@ -54,7 +56,7 @@ public class SimpleAutoAimTeleop extends LinearOpMode {
             
             LLResult result = robot.limelight.getResult();
             if (result != null && result.isValid()) {
-                turretAimer.setShooterByDistance(result.getBotposeAvgDist());
+                //turretAimer.setShooterByDistance(result.getBotposeAvgDist());
             }
 
             // Shooting Logic

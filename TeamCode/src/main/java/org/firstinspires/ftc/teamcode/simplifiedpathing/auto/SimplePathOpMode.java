@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.teamcode.simplifiedpathing.robot.SimplifiedFollower;
+import org.firstinspires.ftc.teamcode.simplifiedpathing.follower.SimplifiedFollower;
 import org.firstinspires.ftc.teamcode.simplifiedpathing.robot.SimplifiedRobot;
 
 /**
